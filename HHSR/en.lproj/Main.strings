@@ -1,0 +1,75 @@
+
+/* Class = "UILabel"; text = "Your Room"; ObjectID = "0B7-E7-WTM"; */
+"0B7-E7-WTM.text" = "Your Room";
+
+/* Class = "UILabel"; text = "Place your order"; ObjectID = "0Pe-mz-g4F"; */
+"0Pe-mz-g4F.text" = "Place your order";
+
+/* Class = "UIButton"; normalTitle = "View Report"; ObjectID = "8JY-af-2rx"; */
+"8JY-af-2rx.normalTitle" = "View Report";
+
+/* Class = "UIButton"; normalTitle = "<"; ObjectID = "9eG-H8-otj"; */
+"9eG-H8-otj.normalTitle" = "<";
+
+/* Class = "UIButton"; normalTitle = "Dinner"; ObjectID = "DMx-OP-Ewg"; */
+"DMx-OP-Ewg.normalTitle" = "Dinner";
+
+/* Class = "UITextField"; placeholder = "Room No."; ObjectID = "ElE-Bf-OMk"; */
+"ElE-Bf-OMk.placeholder" = "Room No.";
+
+/* Class = "UILabel"; text = "Room"; ObjectID = "FUa-UU-qlu"; */
+"FUa-UU-qlu.text" = "Room";
+
+/* Class = "UIButton"; normalTitle = "Breakfast"; ObjectID = "GLM-tG-fOw"; */
+"GLM-tG-fOw.normalTitle" = "Breakfast";
+
+/* Class = "UIButton"; normalTitle = "Report"; ObjectID = "GWY-Vj-qRF"; */
+"GWY-Vj-qRF.normalTitle" = "Report";
+
+/* Class = "UILabel"; text = "Dine in"; ObjectID = "NLa-3Z-8Xh"; */
+"NLa-3Z-8Xh.text" = "Dine in";
+
+/* Class = "UIButton"; normalTitle = "Breakfast"; ObjectID = "NcY-KX-wAM"; */
+"NcY-KX-wAM.normalTitle" = "Breakfast";
+
+/* Class = "UIButton"; normalTitle = "View Report"; ObjectID = "Q60-tj-QoI"; */
+"Q60-tj-QoI.normalTitle" = "View Report";
+
+/* Class = "UILabel"; text = "Category Name"; ObjectID = "RkS-sC-8Gj"; */
+"RkS-sC-8Gj.text" = "Category Name";
+
+/* Class = "UIButton"; normalTitle = "Dinner"; ObjectID = "SNs-GB-qNY"; */
+"SNs-GB-qNY.normalTitle" = "Dinner";
+
+/* Class = "UIButton"; normalTitle = "Done"; ObjectID = "ZU5-gq-iRV"; */
+"ZU5-gq-iRV.normalTitle" = "Done";
+
+/* Class = "UIButton"; normalTitle = "Lunch"; ObjectID = "epq-GA-SB5"; */
+"epq-GA-SB5.normalTitle" = "Lunch";
+
+/* Class = "UIButton"; normalTitle = "Today"; ObjectID = "ksx-p1-zor"; */
+"ksx-p1-zor.normalTitle" = "Today";
+
+/* Class = "UIButton"; normalTitle = "Report"; ObjectID = "mv6-Wf-qNz"; */
+"mv6-Wf-qNz.normalTitle" = "Report";
+
+/* Class = "UILabel"; text = "Room"; ObjectID = "oeo-Xi-WEi"; */
+"oeo-Xi-WEi.text" = "Room";
+
+/* Class = "UIButton"; normalTitle = "Report"; ObjectID = "qPy-gv-QG9"; */
+"qPy-gv-QG9.normalTitle" = "Report";
+
+/* Class = "UITextField"; placeholder = "Room No."; ObjectID = "rzx-X5-u1N"; */
+"rzx-X5-u1N.placeholder" = "Room No.";
+
+/* Class = "UIButton"; normalTitle = "Lunch"; ObjectID = "s3g-5u-cUa"; */
+"s3g-5u-cUa.normalTitle" = "Lunch";
+
+/* Class = "UILabel"; text = "Select Room"; ObjectID = "swR-hW-84h"; */
+"swR-hW-84h.text" = "Select Room";
+
+/* Class = "UITextField"; placeholder = "Password"; ObjectID = "uqK-dG-tSR"; */
+"uqK-dG-tSR.placeholder" = "Password";
+
+/* Class = "UIButton"; normalTitle = "Today"; ObjectID = "zI2-ZP-EwI"; */
+"zI2-ZP-EwI.normalTitle" = "Today";

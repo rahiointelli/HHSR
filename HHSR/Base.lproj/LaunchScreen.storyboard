@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="fUr-rE-Khf">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="71L-Ez-hNo">
+            <objects>
+                <viewController id="fUr-rE-Khf" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="4NK-Hs-W0V">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="splash_screen" translatesAutoresizingMaskIntoConstraints="NO" id="Xwv-rN-sDj">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
+                            <imageView hidden="YES" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="SplashScreen_iphone.gif" translatesAutoresizingMaskIntoConstraints="NO" id="Z0W-xH-oBY">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="eWI-pp-d09"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="Z0W-xH-oBY" firstAttribute="bottom" secondItem="4NK-Hs-W0V" secondAttribute="bottom" id="6JX-Y1-H0R"/>
+                            <constraint firstItem="Z0W-xH-oBY" firstAttribute="top" secondItem="4NK-Hs-W0V" secondAttribute="top" id="H73-Nt-aJV"/>
+                            <constraint firstItem="Z0W-xH-oBY" firstAttribute="trailing" secondItem="eWI-pp-d09" secondAttribute="trailing" id="Mrt-k6-DOv"/>
+                            <constraint firstAttribute="bottom" secondItem="Xwv-rN-sDj" secondAttribute="bottom" id="Np9-ZG-uoD"/>
+                            <constraint firstItem="Xwv-rN-sDj" firstAttribute="top" secondItem="4NK-Hs-W0V" secondAttribute="top" id="cBg-de-SUP"/>
+                            <constraint firstItem="Z0W-xH-oBY" firstAttribute="leading" secondItem="eWI-pp-d09" secondAttribute="leading" id="cYR-wC-xyJ"/>
+                            <constraint firstItem="Xwv-rN-sDj" firstAttribute="leading" secondItem="eWI-pp-d09" secondAttribute="leading" id="gOU-Za-8OE"/>
+                            <constraint firstItem="eWI-pp-d09" firstAttribute="trailing" secondItem="Xwv-rN-sDj" secondAttribute="trailing" id="n8Y-py-2cU"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="sSm-mw-GcD" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="SplashScreen_iphone.gif" width="1284" height="2778"/>
+        <image name="splash_screen" width="428.33334350585938" height="926.33331298828125"/>
+    </resources>
+</document>

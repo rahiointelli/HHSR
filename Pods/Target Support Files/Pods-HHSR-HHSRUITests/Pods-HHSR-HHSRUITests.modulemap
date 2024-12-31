@@ -1,0 +1,6 @@
+framework module Pods_HHSR_HHSRUITests {
+  umbrella header "Pods-HHSR-HHSRUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}

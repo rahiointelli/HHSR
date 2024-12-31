@@ -1,0 +1,32 @@
+/* 
+  Localizable.strings
+  HHSR
+
+  Created by Intelli on 2023-05-30.
+  
+*/
+
+"viewReport" = "查看报告";
+"logOut" = "登出";
+"brk" = "早餐";
+"lunch" = "午餐";
+"dnr" = "晚餐";
+"report" = "报告";
+"today" = "今天";
+"total" = "全部的";
+"January" = "一月";
+"February" = "二月";
+"March" = "三月";
+"April" = "四月";
+"May" = "五月";
+"June" = "六月";
+"July" = "七月";
+"August" = "八月";
+"September" = "九月";
+"October" = "十月";
+"November" = "十一月";
+"December" = "十二月";
+"trayService" = "托盘服务";
+"escortService" = "陪同服务";
+"noOfGuests" = "宾客人数";
+"guest" = "来宾";

@@ -608,7 +608,12 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                             }
                             else
                             {
-                                menuItems[i].isExpanded = 0
+                                if(menuItems[i].ItemQuantity == 0)
+                                {
+                                    menuItems[i].isExpanded = 0
+                                    menuItems[i].ItemOptions.forEach({ $0.IsSelected = 0 })
+                                    menuItems[i].Preferences.forEach({ $0.IsSelected = 0 })
+                                }
                                // self.tblItemList.reloadRows(at: [IndexPath(row: i, section: sec)], with: .automatic)
                             }
                             
@@ -775,7 +780,12 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 }
                 else
                 {
-                    menuItems[rw].isExpanded = 0
+                    if(menuItems[rw].ItemQuantity == 0)
+                    {
+                        menuItems[rw].isExpanded = 0
+                        menuItems[rw].ItemOptions.forEach({ $0.IsSelected = 0 })
+                        menuItems[rw].Preferences.forEach({ $0.IsSelected = 0 })
+                    }
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
                 }
                 
@@ -1207,6 +1217,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                                 if($0.ItemQuantity > 0)
                                 {
                                     $0.ItemQuantity = 0
+                                    $0.ItemOptions.forEach({ $0.IsSelected = 0 })
+                                    $0.Preferences.forEach({ $0.IsSelected = 0 })
                                     self.convertToDict(menuItem: $0)
                                 }
                                 $0.isExpanded = 0
@@ -1224,6 +1236,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                                 if($0.ItemQuantity > 0)
                                 {
                                     $0.ItemQuantity = 0
+                                    $0.ItemOptions.forEach({ $0.IsSelected = 0 })
+                                    $0.Preferences.forEach({ $0.IsSelected = 0 })
                                     self.convertToDict(menuItem: $0)
                                 }
                                 $0.isExpanded = 0
@@ -1241,6 +1255,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                                 if($0.ItemQuantity > 0)
                                 {
                                     $0.ItemQuantity = 0
+                                    $0.ItemOptions.forEach({ $0.IsSelected = 0 })
+                                    $0.Preferences.forEach({ $0.IsSelected = 0 })
                                     self.convertToDict(menuItem: $0)
                                 }
                                 $0.isExpanded = 0

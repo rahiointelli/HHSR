@@ -34,7 +34,7 @@ class clsReportCharges : NSObject
 {
     var RoomNo : String!
     var Data : [Int] = []
-    
+    var OptionName : [String] = []
     
     init(fromJson json: JSON!){
         if json.isEmpty{
@@ -42,6 +42,7 @@ class clsReportCharges : NSObject
         }
         RoomNo = json["room_no"].stringValue
         Data = json["data"].arrayValue.map({ $0.intValue })
+        OptionName = json["option"].arrayValue.map({ $0.stringValue })
     }
 }
 

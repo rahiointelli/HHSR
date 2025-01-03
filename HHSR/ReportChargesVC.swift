@@ -243,7 +243,7 @@ class ReportChargesVC: UIViewController, FSCalendarDataSource, FSCalendarDelegat
         {
             NSLog("date1 before date2");
             minDate = Calendar.current.date(byAdding: .month, value: -2, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
-        }        
+        }
         return minDate
         
     }
@@ -504,43 +504,62 @@ class ReportChargesVC: UIViewController, FSCalendarDataSource, FSCalendarDelegat
         else
         {
             let cell = spreadsheetView.dequeueReusableCell(withReuseIdentifier: String(describing: ItemQuantityCell.self), for: indexPath) as! ItemQuantityCell
+            var quantity = ""
             if(self.currentSelectedIndex == 0)
             {
-                cell.label.text = "\(self.arrBreakfastItems[indexPath.row - 1].Data[indexPath.column - 1])"
+                quantity = "\(self.arrBreakfastItems[indexPath.row - 1].Data[indexPath.column - 1])"
             }
             else if(self.currentSelectedIndex == 1)
             {
-                cell.label.text = "\(self.arrLunchItems[indexPath.row - 1].Data[indexPath.column - 1])"
+                quantity = "\(self.arrLunchItems[indexPath.row - 1].Data[indexPath.column - 1])"
             }
             else
             {
-                cell.label.text = "\(self.arrDinnerItems[indexPath.row - 1].Data[indexPath.column - 1])"
+                quantity = "\(self.arrDinnerItems[indexPath.row - 1].Data[indexPath.column - 1])"
             }
-//              cell.label.text = "Q"
-//            if(indexPath.column == 1 && self.data[indexPath.row - 1].IsForGuest! == 1)
-//            {
-//                cell.label.text = "⎷"
-//            }
-//            else if(indexPath.column == 2 && self.data[indexPath.row - 1].IsExtraItem! == 1)
-//            {
-//                cell.label.text = "⎷"
-//            }
-//            else if(indexPath.column == 3 && (self.data[indexPath.row - 1].IsBrkTrayService! == 1 || self.data[indexPath.row - 1].IsLunchTrayService! == 1 || self.data[indexPath.row - 1].IsDinnerTrayService! == 1))
-//            {
-//                cell.label.text = "⎷"
-//            }
-//            else if(indexPath.column == 1 && (self.data[indexPath.row - 1].IsBrkEscortService! == 1 || self.data[indexPath.row - 1].IsLunchEscortService! == 1 || self.data[indexPath.row - 1].IsDinnerEscortService! == 1))
-//            {
-//                cell.label.text = "⎷"
-//            }
-//            else
-//            {
-//                cell.label.text = ""
-//            }
+
+            if(Int(quantity)! > 0 && indexPath.column > 3)
+            {
+                let attributedString = NSMutableAttributedString.init(string: quantity)
+                // Add Underline Style Attribute.
+                attributedString.addAttribute(NSAttributedString.Key.underlineStyle, value: 1, range:
+                    NSRange.init(location: 0, length: attributedString.length));
+                cell.label.attributedText = attributedString
+                cell.label.isUserInteractionEnabled = true
+                cell.label.tag = ((indexPath.column - 1) * 1000) + (indexPath.row - 1)
+                
+                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.tapRecognized(_:)))
+                cell.label.addGestureRecognizer(tapGesture)
+            }
+            else
+            {
+                cell.label.text = quantity
+            }
+            
             cell.gridlines.bottom = .solid(width: 1, color: .lightGray)
             cell.gridlines.right = .solid(width: 1, color: .white)
             return cell
 
+        }
+    }
+    
+    @objc func tapRecognized(_ sender: UITapGestureRecognizer)
+    {
+        let lbl = sender.view as! UILabel
+        let clm = lbl.tag/1000
+        let rw = lbl.tag%1000
+        
+        if(self.currentSelectedIndex == 0)
+        {
+            self.showMessageAlert(message: "\(self.arrBrkItemTitle[clm].ItemRealName!) -  \(self.arrBreakfastItems[rw].OptionName[clm])")
+        }
+        else if(self.currentSelectedIndex == 1)
+        {
+            self.showMessageAlert(message: "\(self.arrLunchItemTitle[clm].ItemRealName!) -  \(self.arrLunchItems[rw].OptionName[clm])")
+        }
+        else
+        {
+            self.showMessageAlert(message: "\(self.arrDinnerItemTitle[clm].ItemRealName!) -  \(self.arrDinnerItems[rw].OptionName[clm])")
         }
     }
     

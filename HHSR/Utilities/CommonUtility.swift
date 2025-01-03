@@ -22,11 +22,24 @@ class CommonUtility: NSObject
 //             if let statusBar = UIApplication.shared.keyWindow?.viewWithTag(tag) {
 //                statusBar.backgroundColor = UIColor.ColorCodes.statusbar
 //             } else {
-                 let statusBarView = UIView(frame: UIApplication.shared.statusBarFrame)
-                 statusBarView.tag = tag
-
-                 UIApplication.shared.keyWindow?.addSubview(statusBarView)
-                 statusBarView.backgroundColor = UIColor.ColorCodes.statusbar
+            
+            if #available(iOS 13.0, *) {
+                let window = UIApplication.shared.windows.first
+                let topPadding = window?.safeAreaInsets.top
+                let statusBarView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: topPadding ?? 0.0))
+                statusBarView.tag = tag
+                
+                UIApplication.shared.keyWindow?.addSubview(statusBarView)
+                statusBarView.backgroundColor = UIColor.ColorCodes.statusbar
+            }
+            else
+            {
+                let statusBarView = UIView(frame: UIApplication.shared.statusBarFrame)
+                statusBarView.tag = tag
+                
+                UIApplication.shared.keyWindow?.addSubview(statusBarView)
+                statusBarView.backgroundColor = UIColor.ColorCodes.statusbar
+            }
 //             }
             
         }

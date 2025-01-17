@@ -74,6 +74,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     var IsEscortForBrk = 0
     var IsEscortForLunch = 0
     var IsEscortForDinner = 0
+    var IsOrderSubmitted = false
     
     func heightChanged() {
         
@@ -269,7 +270,20 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     }
     
     @IBAction func btnBack_Clicked(_ sender: Any) {
-        self.navigationController?.popViewController(animated: false)
+      
+        if(self.dictItems.count > 0 && self.IsOrderSubmitted == false)
+        {
+            self.AlertChangesNotSaved() { (option) in
+                if(option)
+                {
+                    self.navigationController?.popViewController(animated: false)
+                }
+            }
+        }
+        else
+        {
+            self.navigationController?.popViewController(animated: false)
+        }
     }
       
     @IBAction func btnToday_Clicked(_ sender: Any)
@@ -852,29 +866,59 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     
     func EditDict(menuItem: clsMenuItems)
     {
-        if(self.dictItems.map({ $0["item_id"] as! Int }).contains(menuItem.ItemId!))
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
         {
-            let idx = self.dictItems.map({ $0["item_id"] as! Int }).firstIndex(of: menuItem.ItemId!)!
-            var itm = self.dictItems[idx]
-            var itemOption = itm["item_options"]
-            var preference = itm["preference"]
-            if(menuItem.ItemOptions.count > 0)
+            
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+                       
+            var itemsDict = self.dictItems[idx_date]["items"] as! [[String : Any]]
+            
+            if(itemsDict.map({ $0["item_id"] as! Int }).contains(menuItem.ItemId!))
             {
-                itemOption = (menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).count > 0 ? "\(menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).first!.Id!)" : "") as AnyObject
+                let idx = itemsDict.map({ $0["item_id"] as! Int }).firstIndex(of: menuItem.ItemId!)!
+                var itm = itemsDict[idx]
+                var itemOption = itm["item_options"]
+                var preference = itm["preference"]
+                if(menuItem.ItemOptions.count > 0)
+                {
+                    itemOption = (menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).count > 0 ? "\(menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).first!.Id!)" : "") as AnyObject
+                }
+                if(menuItem.Preferences.count > 0)
+                {
+                    let pr = (menuItem.Preferences.filter({ $0.IsSelected == 1 }).map({ String($0.Id) }))
+                    preference = (pr.joined(separator: ",")) as AnyObject
+                }
+                itm["item_options"] = itemOption
+                itm["preference"] = preference
+                itemsDict[idx] = itm
             }
-            if(menuItem.Preferences.count > 0)
+            else
             {
-                let pr = (menuItem.Preferences.filter({ $0.IsSelected == 1 }).map({ String($0.Id) }))
-                preference = (pr.joined(separator: ",")) as AnyObject
+                var itemOption = ""
+                var preference = ""
+                if(menuItem.ItemOptions.count > 0)
+                {
+                    itemOption = (menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).count > 0 ? "\(menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).first!.Id!)" : "")
+                }
+                if(menuItem.Preferences.count > 0)
+                {
+                    let pr = (menuItem.Preferences.filter({ $0.IsSelected == 1 }).map({ String($0.Id) }))
+                    preference = pr.joined(separator: ",")
+                }
+                let dictItem = [
+                "item_id" : NSInteger(menuItem.ItemId!),
+                "qty" : NSInteger(menuItem.ItemQuantity!),
+                "order_id" : NSInteger(menuItem.OrderId),
+                "item_options" : itemOption,
+                "preference" : preference
+                ] as [String : AnyObject]
+                itemsDict.append(dictItem)
             }
-
-
-            itm["item_options"] = itemOption
-            itm["preference"] = preference
-            self.dictItems[idx] = itm
+            self.dictItems[idx_date]["items"] = itemsDict as AnyObject
         }
         else
         {
+            var itemsDict : [[String : Any]] = []
             var itemOption = ""
             var preference = ""
             if(menuItem.ItemOptions.count > 0)
@@ -893,21 +937,70 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             "item_options" : itemOption,
             "preference" : preference
             ] as [String : AnyObject]
-            self.dictItems.append(dictItem)
+            itemsDict.append(dictItem)
+            
+            var dictDateItem = [
+            "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
+            "items" : itemsDict
+            ] as [String : AnyObject]
+            
+            dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            dictDateItem["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            dictDateItem["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems.append(dictDateItem)
         }
+        self.IsOrderSubmitted = false
     }
     
     func convertToDict(menuItem : clsMenuItems)
     {
-        if(self.dictItems.map({ $0["item_id"] as! Int }).contains(menuItem.ItemId!))
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
         {
-            let idx = self.dictItems.map({ $0["item_id"] as! Int }).firstIndex(of: menuItem.ItemId!)!
-            var itm = self.dictItems[idx]
-            itm["qty"] = NSInteger(menuItem.ItemQuantity!) as AnyObject
-            self.dictItems[idx] = itm
+            
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+                       
+            var itemsDict = self.dictItems[idx_date]["items"] as! [[String : Any]]
+            //self.dictItems.filter({ $0["date"] as! String == self.selectedDate.toString(dateFormat: "yyyy-MM-dd") })
+            
+            if(itemsDict.map({ $0["item_id"] as! Int }).contains(menuItem.ItemId!))
+            {
+                let idx = itemsDict.map({ $0["item_id"] as! Int }).firstIndex(of: menuItem.ItemId!)!
+                var itm = itemsDict[idx]
+                itm["qty"] = NSInteger(menuItem.ItemQuantity!) as AnyObject
+                itemsDict[idx] = itm
+            }
+            else
+            {
+                var itemOption = ""
+                var preference = ""
+                if(menuItem.ItemOptions.count > 0)
+                {
+                    itemOption = (menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).count > 0 ? "\(menuItem.ItemOptions.filter({ $0.IsSelected == 1 }).first!.Id!)" : "")
+                }
+                if(menuItem.Preferences.count > 0)
+                {
+                    let pr = (menuItem.Preferences.filter({ $0.IsSelected == 1 }).map({ String($0.Id) }))
+                    preference = pr.joined(separator: ",")
+                }
+                let dictItem = [
+                "item_id" : NSInteger(menuItem.ItemId!),
+                "qty" : NSInteger(menuItem.ItemQuantity!),
+                "order_id" : NSInteger(menuItem.OrderId),
+                "item_options" : itemOption,
+                "preference" : preference
+                ] as [String : AnyObject]
+                itemsDict.append(dictItem)
+               // self.dictItems.append(dictItem)
+            }
+            
+            self.dictItems[idx_date]["items"] = itemsDict as AnyObject
         }
         else
         {
+            var itemsDict : [[String : Any]] = []
             var itemOption = ""
             var preference = ""
             if(menuItem.ItemOptions.count > 0)
@@ -926,9 +1019,24 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             "item_options" : itemOption,
             "preference" : preference
             ] as [String : AnyObject]
-            self.dictItems.append(dictItem)
+            itemsDict.append(dictItem)
+            
+            var dictDateItem = [
+            "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
+            "items" : itemsDict
+            ] as [String : AnyObject]
+            
+            dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            dictDateItem["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            dictDateItem["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems.append(dictDateItem)
         }
-    
+        
+        self.IsOrderSubmitted = false
+        
         let totalOrders = self.arItemList.map({ $0.NoOfItemsSelected }).reduce(0, +)
         self.vw_tray.isHidden = (totalOrders > 0) ? false : true
         self.vw_escort.isHidden = self.vw_tray.isHidden
@@ -943,38 +1051,55 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         {
             self.btnTray.isSelected = false
             
-            if(self.currentSelectedIndex == 0)
-            {
-                self.IsTrayForBrk = 0
-            }
-            else if(self.currentSelectedIndex == 1)
-            {
-                self.IsTrayForLunch = 0
-            }
-            else
-            {
-                self.IsTrayForDinner = 0
-            }
+//            if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
+//            {
+                
+                let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+                
+                if(self.currentSelectedIndex == 0)
+                {
+                    self.IsTrayForBrk = 0
+                    self.dictItems[idx_date]["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+                }
+                else if(self.currentSelectedIndex == 1)
+                {
+                    self.IsTrayForLunch = 0
+                    self.dictItems[idx_date]["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+                }
+                else
+                {
+                    self.IsTrayForDinner = 0
+                    self.dictItems[idx_date]["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+                }
+            //}
         }
         
         if(self.vw_escort.isHidden == true)
         //if(!self.btnEscort.isEnabled)
         {
             self.btnEscort.isSelected = false
+                        
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
             
             if(self.currentSelectedIndex == 0)
             {
                 self.IsEscortForBrk = 0
+                self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             }
             else if(self.currentSelectedIndex == 1)
             {
                 self.IsEscortForLunch = 0
+                self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             }
             else
             {
                 self.IsEscortForDinner = 0
+                self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
             }
         }
+        
+        let json: JSON = JSON(self.dictItems)
+        print("NEW DICT FORMAT is \(json.rawString()!)")
     }
     
     @objc func MinusQuantity(_ sender: Any)
@@ -1034,10 +1159,10 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             self.view.isUserInteractionEnabled = false
             self.act_indicator.startAnimating()
             
-            let para = ["date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "room_id" : self.selectedRoomID, "orders_to_change" : orders_to_change, "occupancy" : 0, "is_for_guest" : 0, "is_brk_tray_service" : self.IsTrayForBrk, "is_lunch_tray_service" : self.IsTrayForLunch, "is_dinner_tray_service" : self.IsTrayForDinner, "is_brk_escort_service" : self.IsEscortForBrk, "is_lunch_escort_service" : self.IsEscortForLunch, "is_dinner_escort_service" : self.IsEscortForDinner] as [String : Any]
-            
+            let para = ["current_date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "room_id" : self.selectedRoomID, "orders_to_change" : orders_to_change, ] as [String : Any]
+            //"occupancy" : 0, "is_for_guest" : 0, "is_brk_tray_service" : self.IsTrayForBrk, "is_lunch_tray_service" : self.IsTrayForLunch, "is_dinner_tray_service" : self.IsTrayForDinner, "is_brk_escort_service" : self.IsEscortForBrk, "is_lunch_escort_service" : self.IsEscortForLunch, "is_dinner_escort_service" : self.IsEscortForDinner
             //update-order
-            NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + API.update_item_list_api, parameters: para) { (response) in
+            NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + "multi-order-update", parameters: para) { (response) in
                                 
                 print("para are \(para)")
                 
@@ -1048,28 +1173,40 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                     if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                     {
                         print(response.result)
-                        
-                        let items = response.result["item_id"].arrayValue.map({ $0.intValue })
-                        let orders = response.result["order_id"].arrayValue.map({ $0.intValue })
-                        
-                        var indexes : [Int] = []
-                        for i in 0..<items.count
+                        self.IsOrderSubmitted = true
+                        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
                         {
-                            let id = items[i]
-                            if(self.dictItems.map({ $0["item_id"] as! Int }).contains(id))
+                            let items = response.result["item_id"].arrayValue.map({ $0.intValue })
+                            let orders = response.result["order_id"].arrayValue.map({ $0.intValue })
+                            
+                            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+                            
+                            var itemsDict = self.dictItems[idx_date]["items"] as! [[String : Any]]
+                            
+                            var indexes : [Int] = []
+                            for i in 0..<items.count
                             {
-                                let idx = self.dictItems.map({ $0["item_id"] as! Int }).firstIndex(of: id)!
-                                var itm = self.dictItems[idx]
-                                if(orders[i] == 0)
+                                let id = items[i]
+                                if(itemsDict.map({ $0["item_id"] as! Int }).contains(id))
                                 {
-                                    indexes.append(i)
+                                    let idx = itemsDict.map({ $0["item_id"] as! Int }).firstIndex(of: id)!
+                                    var itm = itemsDict[idx]
+                                    if(orders[i] == 0)
+                                    {
+                                        indexes.append(i)
+                                    }
+                                    itm["order_id"] = orders[i] as AnyObject
+                                    itemsDict[idx] = itm
                                 }
-                                itm["order_id"] = orders[i] as AnyObject
-                                self.dictItems[idx] = itm
                             }
+                            
+                            itemsDict.remove(at: indexes)
+                            self.dictItems[idx_date]["items"] = itemsDict as AnyObject
+                            
+                            let temp = self.dictItems[idx_date]
+                            self.dictItems.removeAll()
+                            self.dictItems.append(temp)
                         }
-                        
-                        self.dictItems.remove(at: indexes)
                     }
                     else
                     {
@@ -1123,6 +1260,116 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         return vw
     }
     
+    func SetLocalSelection()
+    {
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
+        {
+            
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+            
+            var itemsDict = self.dictItems[idx_date]["items"] as! [[String : Any]]
+            
+            self.IsTrayForBrk = self.dictItems[idx_date]["is_brk_tray_service"] as! Int
+            self.IsTrayForLunch = self.dictItems[idx_date]["is_lunch_tray_service"] as! Int
+            self.IsTrayForDinner = self.dictItems[idx_date]["is_dinner_tray_service"] as! Int
+            self.IsEscortForBrk = self.dictItems[idx_date]["is_brk_escort_service"] as! Int
+            self.IsEscortForLunch = self.dictItems[idx_date]["is_lunch_escort_service"] as! Int
+            self.IsEscortForDinner = self.dictItems[idx_date]["is_dinner_escort_service"] as! Int
+            
+            for i in 0..<itemsDict.count
+            {
+             
+                let itm = itemsDict[i]
+                self.arrBreakfastItems.forEach({
+                        $0.CatItems.forEach({
+                            if($0.ItemId == (itm["item_id"] as! Int))
+                            {
+                                $0.ItemQuantity = (itm["qty"] as! Int)
+                                $0.OrderId = (itm["order_id"] as! Int)
+                                if((itm["item_options"] as! String).count > 0)
+                                {
+                                    $0.ItemOptions.forEach({
+                                        if(String($0.Id) == String(itm["item_options"] as! String))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                                if((itm["preference"] as! String).count > 0)
+                                {
+                                    let alpref = (itm["preference"] as! String).components(separatedBy: ",")
+                                    $0.Preferences.forEach({
+                                        if(alpref.contains(String($0.Id)))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                            }
+                        })
+                })
+                
+                self.arrLunchItems.forEach({
+                        $0.CatItems.forEach({
+                            if($0.ItemId ==  (itm["item_id"] as! Int))
+                            {
+                                $0.ItemQuantity = (itm["qty"] as! Int)
+                                $0.OrderId = (itm["order_id"] as! Int)
+                                if((itm["item_options"] as! String).count > 0)
+                                {
+                                    $0.ItemOptions.forEach({
+                                        if(String($0.Id) == String(itm["item_options"] as! String))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                                if((itm["preference"] as! String).count > 0)
+                                {
+                                    let alpref = (itm["preference"] as! String).components(separatedBy: ",")
+                                    $0.Preferences.forEach({
+                                        if(alpref.contains(String($0.Id)))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                            }
+                        })
+                })
+                
+                self.arrDinnerItems.forEach({
+                        $0.CatItems.forEach({
+                            if($0.ItemId ==  (itm["item_id"] as! Int))
+                            {
+                                $0.ItemQuantity = (itm["qty"] as! Int)
+                                $0.OrderId = (itm["order_id"] as! Int)
+                                if((itm["item_options"] as! String).count > 0)
+                                {
+                                    $0.ItemOptions.forEach({
+                                        if(String($0.Id) == String(itm["item_options"] as! String))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                                if((itm["preference"] as! String).count > 0)
+                                {
+                                    let alpref = (itm["preference"] as! String).components(separatedBy: ",")
+                                    $0.Preferences.forEach({
+                                        if(alpref.contains(String($0.Id)))
+                                        {
+                                            $0.IsSelected = 1
+                                        }
+                                    })
+                                }
+                            }
+                        })
+                })
+            }
+        }
+    }
+    
     func CallOrderListService()
     {
         self.view.isUserInteractionEnabled = false
@@ -1151,6 +1398,8 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                     self.arrDinnerItems.removeAll()
                     self.arrDinnerItems.append(contentsOf: response.result[MainResponseCodeConstant.keyDinner].arrayValue.compactMap(clsCategoryItems.init))
                     
+                    self.SetLocalSelection()
+                    
                     self.arrBreakfastItems.forEach({ $0.NoOfItemsSelected =  $0.CatItems.map({ $0.ItemQuantity }).reduce(0, +)
                         print("brk items \($0.NoOfItemsSelected)")
                     })
@@ -1164,7 +1413,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                     })
                     let totalDinnerOrders = self.arrDinnerItems.map({ $0.NoOfItemsSelected }).reduce(0, +)
                     
-                    self.dictItems.removeAll()
+                    //self.dictItems.removeAll()
                     
                     if(AppDelegate.sharedDelegate().UserRole == "kitchen")
                     {
@@ -1294,7 +1543,34 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         else
         {
             self.IsTrayForDinner = (self.btnTray.isSelected) ? 1 : 0
-        }       
+        }
+     
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
+        {
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+            
+            self.dictItems[idx_date]["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+        }
+        else
+        {
+            var dictDateItem = [
+            "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
+            "items" : [[:]]
+            ] as [String : AnyObject]
+            
+            dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            dictDateItem["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            dictDateItem["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems.append(dictDateItem)
+        }
+        self.IsOrderSubmitted = false
+        let json: JSON = JSON(self.dictItems)
+        print("NEW DICT FORMAT is \(json.rawString()!)")
     }
     
     @IBAction func btnEscort_Clicked(_ sender: Any)
@@ -1313,35 +1589,133 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         {
             self.IsEscortForDinner = (self.btnEscort.isSelected) ? 1 : 0
         }
+        
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
+        {
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+            
+            self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+        }
+        else
+        {
+            var dictDateItem = [
+            "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
+            "items" : [[:]]
+            ] as [String : AnyObject]
+            
+            dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            dictDateItem["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            dictDateItem["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems.append(dictDateItem)
+        }
+        
+        self.IsOrderSubmitted = false
+        let json: JSON = JSON(self.dictItems)
+        print("NEW DICT FORMAT is \(json.rawString()!)")
     }
     
     @IBAction func btnLogOut_Clicked(_ sender: Any)
     {
-        AppDelegate.sharedDelegate().RoomName = ""
-        CommonUtility.shared.setRoomName(str: "")
-        AppDelegate.sharedDelegate().RoomId = ""
-        CommonUtility.shared.setRoomId(str: "")
-        CommonUtility.shared.setAPIToken(str: "")
-        if #available(iOS 13.0, *) {
-            let sceneDelegate = UIApplication.shared.connectedScenes.first!.delegate as! SceneDelegate
-            sceneDelegate.loadLoginPage()
+        if(self.dictItems.count > 0 && self.IsOrderSubmitted == false)
+        {
+            self.AlertChangesNotSaved() { (option) in
+                if(option)
+                {
+                    AppDelegate.sharedDelegate().RoomName = ""
+                    CommonUtility.shared.setRoomName(str: "")
+                    AppDelegate.sharedDelegate().RoomId = ""
+                    CommonUtility.shared.setRoomId(str: "")
+                    CommonUtility.shared.setAPIToken(str: "")
+                    if #available(iOS 13.0, *) {
+                        let sceneDelegate = UIApplication.shared.connectedScenes.first!.delegate as! SceneDelegate
+                        sceneDelegate.loadLoginPage()
+                    }
+                    else
+                    {
+                        AppDelegate.sharedDelegate().loadLoginPage()
+                    }
+                }
+            }
         }
         else
         {
-            AppDelegate.sharedDelegate().loadLoginPage()
+            AppDelegate.sharedDelegate().RoomName = ""
+            CommonUtility.shared.setRoomName(str: "")
+            AppDelegate.sharedDelegate().RoomId = ""
+            CommonUtility.shared.setRoomId(str: "")
+            CommonUtility.shared.setAPIToken(str: "")
+            if #available(iOS 13.0, *) {
+                let sceneDelegate = UIApplication.shared.connectedScenes.first!.delegate as! SceneDelegate
+                sceneDelegate.loadLoginPage()
+            }
+            else
+            {
+                AppDelegate.sharedDelegate().loadLoginPage()
+            }
         }
+    }
+    
+    func AlertChangesNotSaved(completion: @escaping (Bool) -> Void)
+    {
+        //completion: (option : Bool) -> void)    {
+        var option = false
+        let alert = UIAlertController(title: "Alert", message: "Changes are not saved. Are you sure to leave this page? The changes will be lost.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Yes", style: .default, handler: { (action) in
+            option  = true
+            completion(option)
+        }))
+        alert.addAction(UIAlertAction(title: "No", style: .default, handler: { (action) in
+            option = false
+            completion(option)
+        }))
         
+        DispatchQueue.main.async
+        {
+            if(UIDevice.current.model.range(of: "iPad") != nil)
+            {
+                alert.popoverPresentationController?.sourceView = self.view
+                alert.popoverPresentationController?.sourceRect = self.view.bounds
+                self.present(alert, animated: true, completion: nil)
+            }
+            else
+            {
+                self.present(alert, animated: true, completion: nil)
+            }
+        }
     }
 
     @IBAction func btnGuest_Clicked(_ sender: Any)
     {
-        let guestOrderVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "GuestOrderVC") as! GuestOrderVC
-        guestOrderVC.selectedRoomName = self.selectedRoomName
-        guestOrderVC.selectedRoomID = self.selectedRoomID
-        guestOrderVC.Occupancy = self.Occupancy
-        guestOrderVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
-        guestOrderVC.selectedDate = self.selectedDate
-        self.navigationController?.pushViewController(guestOrderVC, animated: false)
+        if(self.dictItems.count > 0 && self.IsOrderSubmitted == false)
+        {
+            self.AlertChangesNotSaved() { (option) in
+                if(option)
+                {
+                    let guestOrderVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "GuestOrderVC") as! GuestOrderVC
+                    guestOrderVC.selectedRoomName = self.selectedRoomName
+                    guestOrderVC.selectedRoomID = self.selectedRoomID
+                    guestOrderVC.Occupancy = self.Occupancy
+                    guestOrderVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
+                    guestOrderVC.selectedDate = self.selectedDate
+                    self.navigationController?.pushViewController(guestOrderVC, animated: false)
+                }
+            }
+        }
+        else
+        {
+            let guestOrderVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "GuestOrderVC") as! GuestOrderVC
+            guestOrderVC.selectedRoomName = self.selectedRoomName
+            guestOrderVC.selectedRoomID = self.selectedRoomID
+            guestOrderVC.Occupancy = self.Occupancy
+            guestOrderVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
+            guestOrderVC.selectedDate = self.selectedDate
+            self.navigationController?.pushViewController(guestOrderVC, animated: false)
+        }
     }
     
     @IBAction func btnCloseImage_Clicked(_ sender: Any) {

@@ -817,6 +817,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.view.isUserInteractionEnabled = false
             self.act_indicator.startAnimating()
             
+            //para are ["room_id": 4, "is_dinner_tray_service": 0, "occupancy": 2, "is_for_guest": 1, "is_brk_tray_service": 0, "is_lunch_tray_service": 0, "orders_to_change": "[\n  {\n    \"preference\" : \"\",\n    \"order_id\" : 0,\n    \"item_options\" : \"\",\n    \"qty\" : 2,\n    \"item_id\" : 191\n  }\n]", "date": "2025-01-11"]
+            
             let para = ["date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "room_id" : self.selectedRoomID, "orders_to_change" : orders_to_change, "occupancy" : self.Occupancy, "is_for_guest" : 1, "is_brk_tray_service" : self.IsTrayForBrk, "is_lunch_tray_service" : self.IsTrayForLunch, "is_dinner_tray_service" : self.IsTrayForDinner] as [String : Any]
             
             //update-order

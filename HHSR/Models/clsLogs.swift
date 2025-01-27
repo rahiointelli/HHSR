@@ -40,6 +40,24 @@ class clsLogs : NSObject
 }
 
 
+class clsUsers : NSObject
+{
+    var UserId : Int!
+    var Name : String!
+    var Role : String!
+    
+    init(fromJson json: JSON!){
+        if json.isEmpty{
+            return
+        }
+        
+        UserId = json["id"].intValue
+        Name = json["name"].stringValue
+        Role = json["role_name"].stringValue
+        
+    }
+}
+
 class clsForms : NSObject
 {
     var FormId : Int!
@@ -61,8 +79,7 @@ class clsForms : NSObject
     init(formId : Int, formName : String) {
         self.FormId = formId
         self.FormName = formName
-    }
-    
+    }    
 }
 
 struct clsFormFields

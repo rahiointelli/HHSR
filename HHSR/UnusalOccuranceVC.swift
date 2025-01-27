@@ -13,7 +13,7 @@ import AVKit
 import MobileCoreServices
 import SDWebImage
 
-class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, TLPhotosPickerViewControllerDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout{
+class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, TLPhotosPickerViewControllerDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIPickerViewDelegate, UIPickerViewDataSource{
 
     @IBOutlet weak var act_indicator: UIActivityIndicatorView!
     @IBOutlet var dtPicker : UIDatePicker!
@@ -124,6 +124,10 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
     @IBOutlet weak var btnShowFollowUp: UIButton!
     @IBOutlet weak var scl_view: UIScrollView!
     @IBOutlet weak var stk_followUp: UIStackView!
+    @IBOutlet weak var vw_assignUser: UIView!
+    @IBOutlet weak var pckView : UIPickerView!
+    @IBOutlet weak var vw_PickerContainer: UIView!
+    @IBOutlet weak var btnSelectUser: UIButton!
     
     let imagePicker = UIImagePickerController()
     let customImagePicker = CustomPhotoPickerViewController()
@@ -163,18 +167,36 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
     var calledFrom = "Add"
     var form_id = 0
     var isFollowUpIncomplete = false
+    var AssignedToSelectedIndex = 0
+    var canEditFollowUp = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
   
+        let idx = AppDelegate.sharedDelegate().arUserList.map({ $0.Name }).firstIndex(of: "Admin")
+        self.AssignedToSelectedIndex = idx!
+        let selectedUser = AppDelegate.sharedDelegate().arUserList[self.AssignedToSelectedIndex]
+        self.btnSelectUser.setTitle(selectedUser.Name, for: .normal)
+        
         //UNUSAL OCCURANCE INCIDENT REPORT
-        if(AppDelegate.sharedDelegate().UserRole == "concierge" || AppDelegate.sharedDelegate().UserRole == "nurse")
+//        if(AppDelegate.sharedDelegate().UserRole == "concierge" || AppDelegate.sharedDelegate().UserRole == "nurse")
+//        {
+//            self.vw_chkMarkFollowUp.isHidden = true
+//            self.vw_FollowUp.isHidden = true
+//           // self.vw_assignUser.isHidden = true
+//        }
+//        else
+        if(self.calledFrom == "Add")
         {
-            self.vw_chkMarkFollowUp.isHidden = true
-            self.vw_FollowUp.isHidden = true
-        }
-        else if(self.calledFrom == "Add")
-        {
+            if(AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "superadmin")
+            {
+                self.canEditFollowUp = true
+                self.EnableDisableFollowUpFields(isEnabled: true)
+            }
+            else
+            {
+                self.EnableDisableFollowUpFields(isEnabled: false)
+            }
             self.vw_FollowUp.isHidden = true
         }
         else
@@ -213,8 +235,8 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
 //        self.dtPicker.datePickerMode = .dateAndTime
         if #available(iOS 13.0, *) {
             self.dtPicker.overrideUserInterfaceStyle = .light
+            self.pckView.overrideUserInterfaceStyle = .light
         }
-        
         self.txtFactual.backgroundColor = .white
         self.txtIssue.backgroundColor = .white
         self.txtFindings.backgroundColor = .white
@@ -226,6 +248,15 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         {
             self.CallFormDetailService()
         }
+    }
+    
+    func EnableDisableFollowUpFields(isEnabled:Bool)
+    {
+        self.txtIssue.isEditable = isEnabled
+        self.txtFindings.isEditable = isEnabled
+        self.txtSolutions.isEditable = isEnabled
+        self.txtActionPlan.isEditable = isEnabled
+        self.txtFollowUp.isEditable = isEnabled
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -359,6 +390,18 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
                 }
             }
         }
+    }
+    
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return AppDelegate.sharedDelegate().arUserList.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return AppDelegate.sharedDelegate().arUserList[row].Name
     }
     
     @objc func btnRemoveAttachmentClicked(_ sender: Any)
@@ -703,6 +746,30 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         self.CurrentDateSelection = "NotiOtherDateTime"
     }
     
+    @IBAction func btnUserSelectionClicked(_ sender: Any)
+    {
+        self.pckView.reloadAllComponents()
+        self.view.endEditing(true)
+        self.vw_clearBG.isHidden = false
+        self.vw_header.isUserInteractionEnabled = false
+        let wd = UIScreen.main.bounds.size.width
+        
+        self.vw_PickerContainer.frame = CGRect(x: (wd - dtpickerWidth)/2, y: ((UIScreen.main.bounds.size.height - self.vw_PickerContainer.frame.size.height)/2), width: dtpickerWidth, height: self.vw_PickerContainer.frame.size.height)
+   
+        self.view.addSubview(self.vw_PickerContainer)
+        
+       
+        if(self.btnSelectUser.title(for: .normal) != "Select User")
+        {
+            let idx = AppDelegate.sharedDelegate().arUserList.map({ $0.Name }).firstIndex(of: self.btnSelectUser.title(for: .normal))
+            self.pckView.selectRow(idx ?? 0, inComponent: 0, animated: false)
+        }
+        else
+        {
+            self.pckView.selectRow(0, inComponent: 0, animated: false)
+        }
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
             print("in disappear")
     }
@@ -712,6 +779,33 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         self.navigationController?.popViewController(animated: false)
     }
     
+    @IBAction func btnCancelUserClicked(_ sender: Any)
+    {
+        self.vw_clearBG.isHidden = true
+        self.vw_header.isUserInteractionEnabled = true
+        self.vw_PickerContainer.removeFromSuperview()
+    }
+    
+    @IBAction func btnSelectUserClicked(_ sender: Any)
+    {
+        
+        self.vw_clearBG.isHidden = true
+        self.vw_header.isUserInteractionEnabled = true
+        self.vw_PickerContainer.removeFromSuperview()
+        self.AssignedToSelectedIndex = self.pckView.selectedRow(inComponent: 0)
+        let selectedUser = AppDelegate.sharedDelegate().arUserList[self.AssignedToSelectedIndex]
+        self.btnSelectUser.setTitle(selectedUser.Name, for: .normal)
+        
+        if(AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "superadmin" || AppDelegate.sharedDelegate().UserId == "\(selectedUser.UserId!)")
+        {
+            self.canEditFollowUp = true
+            self.EnableDisableFollowUpFields(isEnabled: true)
+        }
+        else
+        {
+            self.EnableDisableFollowUpFields(isEnabled: false)
+        }
+    }
     
     @IBAction func btnCancelDateClicked(_ sender: Any)
     {
@@ -864,6 +958,10 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         {
             self.showMessageAlert(message: "Please select Date/Time of Notification.")
         }
+        else if(self.btnSelectUser.title(for: .normal) == "Select User")
+        {
+            self.showMessageAlert(message: "Please select User to assign follow up.")
+        }
         else
         {
             if(self.calledFrom == "Edit")
@@ -945,11 +1043,10 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         self.act_indicator.startAnimating()
         
            
-        let para = ["form_id" : self.form_id, "data" : json.rawString()!] as [String : Any]
+        let para = ["form_id" : self.form_id, "data" : json.rawString()!, "follow_up_assigned_to" : "\(AppDelegate.sharedDelegate().arUserList[self.AssignedToSelectedIndex].UserId!)"] as [String : Any]
         
         NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + "edit-form-phase1", parameters: para) { (response) in
-            
-            
+           
             print("api is \(API.baseURL + "edit-form") para are \(para)")
             
             if(response.error == nil)
@@ -1278,7 +1375,7 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         self.act_indicator.startAnimating()
         
            
-        let para : [String : Any] = ["form_type" : "1", "data" : json.rawString()!] as [String : Any]
+        let para : [String : Any] = ["form_type" : "1", "data" : json.rawString()!, "follow_up_assigned_to" : "\(AppDelegate.sharedDelegate().arUserList[self.AssignedToSelectedIndex].UserId!)"] as [String : Any]
         
         var imgParams : [String : Any] = [:]
         var videoParams : [String : Any] = [:]
@@ -1705,7 +1802,22 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
                 {
                     print(response.result)
                     
-                    self.arEditAttachments = 
+                    let AssignedUser = clsUsers(fromJson: response.result["follow_up_user"])
+                    self.btnSelectUser.setTitle(AssignedUser.Name, for: .normal)
+                    let idx = AppDelegate.sharedDelegate().arUserList.map({ $0.UserId }).firstIndex(of: AssignedUser.UserId)
+                    self.AssignedToSelectedIndex = idx ?? 0
+                    
+                    if(AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "superadmin" || AppDelegate.sharedDelegate().UserId == "\(AssignedUser.UserId!)")
+                    {
+                        self.canEditFollowUp = true
+                        self.EnableDisableFollowUpFields(isEnabled: true)
+                    }
+                    else
+                    {
+                        self.EnableDisableFollowUpFields(isEnabled: false)
+                    }
+                    
+                    self.arEditAttachments =
                     (response.result["attachments"].arrayValue.compactMap(clsAttachment.init))
                     
                     self.TotalAddedSize = self.arEditAttachments.map({ Double($0.MediaSize) * 0.001 }).reduce(0, +)

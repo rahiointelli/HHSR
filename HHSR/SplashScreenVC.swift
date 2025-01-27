@@ -80,6 +80,7 @@ class SplashScreenVC: UIViewController {
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
                     print(response.result)
+                    AppDelegate.sharedDelegate().UserId = response.result["user_id"].stringValue
                     AppDelegate.sharedDelegate().arRoomList.removeAll()
                     AppDelegate.sharedDelegate().arRoomList.append(contentsOf: response.result[MainResponseCodeConstant.keyRoomsList].arrayValue.compactMap(clsRoom.init))
                     
@@ -105,6 +106,8 @@ class SplashScreenVC: UIViewController {
                         {
                             AppDelegate.sharedDelegate().arFormList.removeAll()
                             AppDelegate.sharedDelegate().arFormList.append(contentsOf: response.result["form_types"].arrayValue.compactMap(clsForms.init))
+                            AppDelegate.sharedDelegate().arUserList.removeAll()
+                            AppDelegate.sharedDelegate().arUserList.append(contentsOf: response.result["user_list"].arrayValue.compactMap(clsUsers.init))
                             
 //                            let SearchRoomVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SearchRoomVC") as! SearchRoomVC
 //                            self.navigationController?.pushViewController(SearchRoomVC, animated: false)

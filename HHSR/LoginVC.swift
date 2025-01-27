@@ -75,6 +75,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
                     CommonUtility.shared.setRoomId(str: AppDelegate.sharedDelegate().RoomId)
                     AppDelegate.sharedDelegate().RoomName = response.result["room_number"].stringValue
                     CommonUtility.shared.setRoomName(str: AppDelegate.sharedDelegate().RoomName)
+                    AppDelegate.sharedDelegate().UserId = response.result["user_id"].stringValue
                     
                     if(response.result[MainResponseCodeConstant.keyAuthenticationToken].exists())
                     {
@@ -109,6 +110,8 @@ class LoginVC: UIViewController, UITextFieldDelegate {
 //                       self.navigationController?.pushViewController(SearchRoomVC, animated: false)
                         AppDelegate.sharedDelegate().arFormList.removeAll()
                         AppDelegate.sharedDelegate().arFormList.append(contentsOf: response.result["form_types"].arrayValue.compactMap(clsForms.init))
+                        AppDelegate.sharedDelegate().arUserList.removeAll()
+                        AppDelegate.sharedDelegate().arUserList.append(contentsOf: response.result["user_list"].arrayValue.compactMap(clsUsers.init))
                         
                         let catVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "CategorySelectionVC") as! CategorySelectionVC
 //                        let SearchRoomVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SearchRoomVC") as! SearchRoomVC

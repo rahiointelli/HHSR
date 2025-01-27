@@ -28,7 +28,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var arRoomList : [clsRoom] = []
     var lastMenuDate : String = ""
     var arFormList : [clsForms] = []
+    var arUserList : [clsUsers] = []
     var arLoggedBy : [String] = []
+    var UserId : String = ""
     
     class func sharedDelegate() -> AppDelegate
     {

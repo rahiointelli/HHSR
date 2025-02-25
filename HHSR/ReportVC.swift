@@ -237,12 +237,12 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     func minimumDate(for calendar: FSCalendar) -> Date {
         //return  Date() //stDate!
         formatter.dateFormat = "yyyy MM dd"
-        var minDate = Calendar.current.date(byAdding: .month, value: -1, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+        var minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
         if self.lastMenuDate.compare(minDate) == ComparisonResult.orderedAscending
         {
             NSLog("date1 before date2");
-            minDate = Calendar.current.date(byAdding: .month, value: -1, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
-        }        
+            minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
+        }
         return minDate
         
     }
@@ -609,7 +609,15 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     @IBAction func btnReportForCharges_Clicked(_ sender: Any)
     {
         let reportVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ReportChargesVC") as! ReportChargesVC
-        reportVC.lastMenuDate = self.lastMenuDate
+        reportVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
+        if (reportVC.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
+        {
+            reportVC.selectedDate = reportVC.lastMenuDate
+        }
+        else
+        {
+            reportVC.selectedDate = Date()
+        }
         self.navigationController?.pushViewController(reportVC, animated: false)
     }
     

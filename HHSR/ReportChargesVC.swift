@@ -238,11 +238,11 @@ class ReportChargesVC: UIViewController, FSCalendarDataSource, FSCalendarDelegat
     func minimumDate(for calendar: FSCalendar) -> Date {
         //return  Date() //stDate!
         formatter.dateFormat = "yyyy MM dd"
-        var minDate = Calendar.current.date(byAdding: .month, value: -2, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+        var minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
         if self.lastMenuDate.compare(minDate) == ComparisonResult.orderedAscending
         {
             NSLog("date1 before date2");
-            minDate = Calendar.current.date(byAdding: .month, value: -2, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
+            minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
         }
         return minDate
         

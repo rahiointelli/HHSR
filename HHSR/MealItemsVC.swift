@@ -321,11 +321,11 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     func minimumDate(for calendar: FSCalendar) -> Date {
         //return  Date() //stDate!
         formatter.dateFormat = "yyyy MM dd"
-        var minDate = Calendar.current.date(byAdding: .month, value: -2, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+        var minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
         if self.lastMenuDate.compare(minDate) == ComparisonResult.orderedAscending
         {
             NSLog("date1 before date2");
-            minDate = Calendar.current.date(byAdding: .month, value: -2, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
+            minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
         }
         return minDate
         
@@ -714,9 +714,16 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             
             self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditDinner == true)
         }
-                
-        let totalOrders = self.arItemList.map({ $0.NoOfItemsSelected }).reduce(0, +)
-        self.vw_tray.isHidden = (totalOrders > 0) ? false : true // && self.btnSubmit.isEnabled
+        
+        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        {
+            self.vw_tray.isHidden = true
+        }
+        else
+        {
+            let totalOrders = self.arItemList.map({ $0.NoOfItemsSelected }).reduce(0, +)
+            self.vw_tray.isHidden = (totalOrders > 0) ? false : true // && self.btnSubmit.isEnabled
+        }
         if(self.btnSubmit.isEnabled)
         {
             self.vw_tray.isUserInteractionEnabled = true

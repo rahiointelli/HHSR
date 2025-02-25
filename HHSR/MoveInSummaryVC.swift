@@ -51,6 +51,7 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
     @IBOutlet weak var txtCarePlanRate : UITextField!
     @IBOutlet weak var txt1TimeMoveInFee : UITextField!
     @IBOutlet weak var txtParkingRate : UITextField!
+    @IBOutlet weak var txtParkingGST : UITextField!
     @IBOutlet weak var txtParkingQuantity : UITextField!
     @IBOutlet weak var txtScooterRate : UITextField!
     @IBOutlet weak var txtScooterQuantity : UITextField!
@@ -120,6 +121,7 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
     var calledFrom = "Add"
     var form_id = 0
     var isSignAdded = false
+    var staticData = [String:Any]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -139,11 +141,15 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
         self.canvasView.backgroundColor = .white
         self.canvasView.tool = PKInkingTool(.marker, color: .black, width: 1)
         self.canvasView.becomeFirstResponder()
-               
+         
+        self.GetDefaultFixedValues()
         if(self.calledFrom == "Edit")
         {
             self.CallFormDetailService()
         }
+//        else
+//        {
+//        }
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.btnSignature_Clicked(_:)))
         self.imgSignature.isUserInteractionEnabled = true
@@ -198,21 +204,28 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
     func textFieldDidChangeSelection(_ textField: UITextField) {
         if(textField == self.txtMonthlyRate)
         {
+            let rt = (self.staticData["monthly_rate_for_second_resident"] as! JSON).rawString()
             if(self.txtMonthlyRate.text!.count > 0)
             {
-                self.txtHalfMRentalDepositfor1stRes.text = "\(Float(self.txtMonthlyRate.text!)!/2)"
-//                if(self.btnHas2ndResident.isSelected)
-//                {
-                    self.txtHalfMRentalDepositfor2ndRes.text = "\(Float(self.txtMonthlyRate.text!)!/2)"
-                //}
+                if(self.btnHas2ndResident.isSelected == true)
+                {
+                    if(Int(self.txtMonthlyRate.text!)! > Int(rt!)!)
+                    {
+                        self.txtHalfMRentalDepositfor1stRes.text = "\((Float(self.txtMonthlyRate.text!)! - Float(rt!)!)/2)"
+                    }
+                    else
+                    {
+                        self.txtHalfMRentalDepositfor1stRes.text = ""
+                    }
+                }
+                else
+                {
+                    self.txtHalfMRentalDepositfor1stRes.text = "\(Float(self.txtMonthlyRate.text!)! / 2)"
+                }
             }
             else
             {
                 self.txtHalfMRentalDepositfor1stRes.text = ""
-//                if(self.btnHas2ndResident.isSelected)
-//                {
-                    self.txtHalfMRentalDepositfor2ndRes.text = ""
-                //}
             }
         }
         else if(textField == self.txtCarePlanRate)
@@ -224,6 +237,42 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
             else
             {
                 self.txtHalfMCarePlan.text = ""
+            }
+        }
+        else if(textField == self.txtParkingRate)
+        {
+            if(self.txtParkingRate.text!.count > 0)
+            {
+                let gst_parking_percentage = (self.staticData["gst_percentage_for_parking"] as! JSON).rawString()
+                self.txtParkingGST.text = "\(Float(self.txtParkingRate.text!)!*Float(gst_parking_percentage!)!/100)"
+            }
+            else
+            {
+                self.txtParkingGST.text = ""
+            }
+        }
+        else if(textField == self.txtElpasQuantity)
+        {
+            if(self.txtElpasQuantity.text!.count > 0)
+            {
+                let rt = (self.staticData["elpas_rate"] as! JSON).rawString()
+                self.txtElpasRate.text = "\(Int(self.txtElpasQuantity.text!)! * Int(rt!)!)"
+            }
+            else
+            {
+                self.txtElpasRate.text = ""
+            }
+        }
+        else if(textField == self.txtGarageFobQuantity)
+        {
+            if(self.txtGarageFobQuantity.text!.count > 0)
+            {
+                let rt = (self.staticData["garage_fob_rate"] as! JSON).rawString()
+                self.txtGarageFobRate.text = "\(Int(self.txtGarageFobQuantity.text!)! * Int(rt!)!)"
+            }
+            else
+            {
+                self.txtGarageFobRate.text = ""
             }
         }
     }
@@ -575,6 +624,49 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
         self.cns_stkRes2Bottom.constant = (btn.isSelected) ? 10 : 0
         self.cns_vwHalfMRentalDepositfor2ndResBottom.constant = (btn.isSelected) ? 10 : 0
         self.cns_hgt_txtHalfMRentalDepositfor2ndRes.constant = (btn.isSelected) ? 30 : 0
+        
+//        if(btn.isSelected)
+//        {
+//            self.txtParkingQuantity.text = "2"
+//            self.txtScooterQuantity.text = "2"
+//            self.txtWindowScreenQuantity.text = "2"
+//            self.txtGrabBarQuantity.text = "2"
+//            self.txtElpasQuantity.text = "2"
+//            self.txtGarageFobQuantity.text = "2"
+//        }
+//        else
+//        {
+//            self.txtParkingQuantity.text = "1"
+//            self.txtScooterQuantity.text = "1"
+//            self.txtWindowScreenQuantity.text = "1"
+//            self.txtGrabBarQuantity.text = "1"
+//            self.txtElpasQuantity.text = "1"
+//            self.txtGarageFobQuantity.text = "1"
+//        }
+        
+        let rt = (self.staticData["monthly_rate_for_second_resident"] as! JSON).rawString()
+        if(self.txtMonthlyRate.text!.count > 0)
+        {
+            if(self.btnHas2ndResident.isSelected == true)
+            {
+                if(Int(self.txtMonthlyRate.text!)! > Int(rt!)!)
+                {
+                    self.txtHalfMRentalDepositfor1stRes.text = "\((Float(self.txtMonthlyRate.text!)! - Float(rt!)!)/2)"
+                }
+                else
+                {
+                    self.txtHalfMRentalDepositfor1stRes.text = ""
+                }
+            }
+            else
+            {
+                self.txtHalfMRentalDepositfor1stRes.text = "\(Float(self.txtMonthlyRate.text!)! / 2)"
+            }
+        }
+        else
+        {
+            self.txtHalfMRentalDepositfor1stRes.text = ""
+        }
     }
     
     @IBAction func btnPaymentReceived_Clicked(_ sender: Any)
@@ -886,6 +978,7 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
             "care_plan_rate" : self.txtCarePlanRate.text!,
             "one_time_move_in_fee" : self.txt1TimeMoveInFee.text!,
             "parking_rate" : self.txtParkingRate.text!,
+            "parking_gst_val" : self.txtParkingGST.text!,
             "parking_quantity" : self.txtParkingQuantity.text!,
             "scooter_rate" : self.txtScooterRate.text!,
             "scooter_quantity" : self.txtScooterQuantity.text!,
@@ -968,6 +1061,49 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
         }
            
         return dictItem
+    }
+    
+    func GetDefaultFixedValues()
+    {
+        self.view.isUserInteractionEnabled = false
+        self.act_indicator.startAnimating()
+        NetworkUtilities.shared.makeGETRequest(with: API.baseURL + "get-move-in-summary-values") {
+        //NetworkUtilities.shared.makePOSTRequest(with: , parameters: ["form_id" : self.form_id]) {
+            (response) in
+            
+            self.view.isUserInteractionEnabled = true
+            self.act_indicator.stopAnimating()
+
+            if(response.error == nil)
+            {
+                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
+                {
+                    print(response.result)
+                    self.staticData = response.result["Data"].dictionaryValue
+                    
+                    if(self.calledFrom == "Add")
+                    {
+                        self.txt1TimeMoveInFee.text = (self.staticData["one_time_move_in_fee"] as! JSON).rawString()
+                        self.txtParkingRate.text = (self.staticData["parking_rate"] as! JSON).rawString()
+                        let gst_parking_percentage = (self.staticData["gst_percentage_for_parking"] as! JSON).rawString()
+                        self.txtParkingGST.text = "\(Float(self.txtParkingRate.text!)!*Float(gst_parking_percentage!)!/100)"
+                        
+                        self.txtHalfMRentalDepositfor2ndRes.text = "\(Float((self.staticData["monthly_rate_for_second_resident"] as! JSON).rawString()!)!/2)"
+                        self.txtMoveInOut.text = (self.staticData["move_in_out_rate"] as! JSON).rawString()
+                        self.txtElpasRate.text = (self.staticData["elpas_rate"] as! JSON).rawString()
+                        self.txtGarageFobRate.text = (self.staticData["garage_fob_rate"] as! JSON).rawString()
+                    }
+                }
+                else
+                {
+                    self.showMessageAlert(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
+                }
+            }
+            else
+            {
+                self.showMessageAlert(message: response.error!.localizedDescription)
+            }
+        }
     }
     
     func CallFormDetailService()
@@ -1053,7 +1189,7 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
                             self.cns_stkRes2Bottom.constant = 10
                             self.cns_vwHalfMRentalDepositfor2ndResBottom.constant = 10
                             self.cns_hgt_txtHalfMRentalDepositfor2ndRes.constant = 30
-                            
+                                                     
                             if((form_detail["second_resident_name_first_name"]?.exists()) != nil)
                             {
                                 self.txtres2_FName.text = form_detail["second_resident_name_first_name"]?.stringValue
@@ -1115,6 +1251,10 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
                     if((form_detail["parking_rate"]?.exists()) != nil)
                     {
                         self.txtParkingRate.text = form_detail["parking_rate"]?.stringValue
+                    }
+                    if((form_detail["parking_gst_val"]?.exists()) != nil)
+                    {
+                        self.txtParkingGST.text = form_detail["parking_gst_val"]?.stringValue
                     }
                     if((form_detail["parking_quantity"]?.exists()) != nil)
                     {

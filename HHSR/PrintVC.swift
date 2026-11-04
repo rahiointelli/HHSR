@@ -32,7 +32,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
     @IBOutlet weak var vwTextureTop: UIView!
     @IBOutlet weak var vwTextureBottom: UIView!
     @IBOutlet weak var vwTitleBottom: UIView!
-    @IBOutlet weak var cns_tblTop: NSLayoutConstraint!
+    @IBOutlet weak var cns_tblTop: NSLayoutConstraint!    
     
     var selectedRoomName : String = ""
     var selectedRoomID : Int = 0
@@ -43,7 +43,9 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
     var allData : [clsCombinedPrintItems] = []
     var items : [clsPrintItems] = []
     var specialInstText = ""
+    var allergyInfoText = ""
     var splInstCount = 0
+    var allergyInfoCount = 0
     var logData = UIImage()
     var scrWd = 0.0
     var printPaperWidth = 515.0 //80 * 3.779528 //320.0
@@ -54,6 +56,9 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
     var IsEscortForBrk = 0
     var IsEscortForLunch = 0
     var IsEscortForDinner = 0
+    var IsTakeoutForBrk = 0
+    var IsTakeoutForLunch = 0
+    var IsTakeoutForDinner = 0
     var extraServiceCount = 0
     var extraServiceValue = ""
     var indx = 0
@@ -66,6 +71,8 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
         print("stack view is \(self.stck_texture)")
         self.view.backgroundColor = .white
         self.tblOrderData.backgroundColor = .white
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive), name: NSNotification.Name(rawValue: NotificationNamesConstant.keyAppBecameActive), object: nil)
         
        // self.printPaperWidth = UIScreen.main.bounds.size.width
         self.scrWd = UIScreen.main.bounds.size.width
@@ -89,6 +96,16 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
         self.tblOrderData.register(UINib(nibName: "TblPrintCell", bundle: nil), forCellReuseIdentifier: "TblPrintCell")
                        
         self.CallPrintService()
+    }
+    
+    @objc func appBecameActive(notification : NSNotification)
+    {
+//        let uinfo = notification.userInfo
+//        
+//        let idx = self.data.firstIndex(where: { $0["id"].intValue ==  uinfo![PushNotificationKeysConstant.keyFormId] as! Int })
+//        let newLink = uinfo![PushNotificationKeysConstant.keyFormPDFURL] as! String
+//        self.data[idx!]["formLink"] = JSON(newLink)
+        self.tblOrderData.reloadData()
     }
     
     override func viewWillAppear(_ animated: Bool)
@@ -127,6 +144,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
     
     override func viewDidLayoutSubviews() {
         //self.tblOrderData.tableHeaderView = self.tblHeader
+       // self.tblOrderData.reloadData()
     }
 
     @IBAction func btnBack_Clicked(_ sender: Any) {
@@ -143,7 +161,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return (self.items.count > 0) ? (self.items.count + self.splInstCount + 1 + self.extraServiceCount) : 0
+        return (self.items.count > 0) ? (self.items.count + self.splInstCount + self.allergyInfoCount + 1 + self.extraServiceCount) : 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
@@ -157,12 +175,60 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
 //        cell.cns_itemBottom.constant = 7
         cell.cns_itemTop.constant = 7
         
-        if((self.extraServiceCount == 1 && self.splInstCount == 1 && (indexPath.row == self.items.count + 2)) || (self.extraServiceCount == 1 && self.splInstCount == 0 && (indexPath.row == self.items.count + 1)) || (self.extraServiceCount == 0 && self.splInstCount == 1 && (indexPath.row == self.items.count + 1)) || (self.extraServiceCount == 0 && self.splInstCount == 0 && (indexPath.row == self.items.count)))
-        //if((indexPath.row == self.items.count + 1) || (indexPath.row == self.items.count && self.splInstCount == 0))
+        var islastRow = false
+        var isextraServiceRow: Bool = false
+        var isallergyInfoRow: Bool = false
+        
+        if(self.extraServiceCount == 1 && self.splInstCount == 1 && self.allergyInfoCount == 1 && (indexPath.row == self.items.count + 3))
+        {
+            islastRow = true
+        }
+        else if(self.extraServiceCount == 0 && self.splInstCount == 0 && self.allergyInfoCount == 0 && (indexPath.row == self.items.count))
+        {
+            islastRow = true
+        }
+        else if((self.extraServiceCount == 1 && self.splInstCount == 0 && self.allergyInfoCount == 0 && (indexPath.row == self.items.count + 1)) ||  (self.extraServiceCount == 0 && self.splInstCount == 1 && self.allergyInfoCount == 0 && (indexPath.row == self.items.count + 1)) || (self.extraServiceCount == 0 && self.splInstCount == 0 && self.allergyInfoCount == 1 && (indexPath.row == self.items.count + 1)))
+        {
+            islastRow = true
+        }
+        else if((self.extraServiceCount == 1 && self.splInstCount == 1 && self.allergyInfoCount == 0 && (indexPath.row == self.items.count + 2)) ||  (self.extraServiceCount == 1 && self.splInstCount == 0 && self.allergyInfoCount == 1 && (indexPath.row == self.items.count + 2)) || (self.extraServiceCount == 0 && self.splInstCount == 1 && self.allergyInfoCount == 1 && (indexPath.row == self.items.count + 2)))
+        {
+            islastRow = true
+        }
+        
+        if(islastRow == false && self.extraServiceCount == 1)
+        {
+            if(self.splInstCount == 1 && self.allergyInfoCount == 1 && (indexPath.row == self.items.count + 2))
+            {
+                isextraServiceRow = true
+            }
+            else if(self.splInstCount == 0 && self.allergyInfoCount == 0 && (indexPath.row == self.items.count))
+            {
+                isextraServiceRow = true
+            }
+            else if(((self.splInstCount == 1 && self.allergyInfoCount == 0) || (self.splInstCount == 0 && self.allergyInfoCount == 1)) && (indexPath.row == self.items.count + 1))
+            {
+                isextraServiceRow = true
+            }
+        }
+        
+        if(islastRow == false && isextraServiceRow == false && self.allergyInfoCount == 1)
+        {
+            if(self.splInstCount == 1 && (indexPath.row == self.items.count + 1))
+            {
+                isallergyInfoRow = true
+            }
+            else if(self.splInstCount == 0 && (indexPath.row == self.items.count))
+            {
+                isallergyInfoRow = true
+            }
+        }
+        
+        if(islastRow == true)
         {
             cell.lblOption.text = ""
-            cell.lblItem.text = "\(self.lblCurrentDateTime.text!)"
-            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 23 : 18)
+            cell.lblItem.text = Date().toString(dateFormat: "MMM d, yyyy - h:mm a")//"\(self.lblCurrentDateTime.text!)"
+            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 31 : 26)
             cell.lblItem.textAlignment = .center
             cell.vwDashedLine.isHidden = true
             cell.lblItem.numberOfLines = 1
@@ -170,21 +236,30 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
 //            cell.cns_catTop.constant = 2
 //            cell.cns_itemBottom.constant = 3
         }
-        else if(self.extraServiceCount == 1 && ((self.splInstCount == 1 && (indexPath.row == self.items.count + 1)) || (self.splInstCount == 0 && (indexPath.row == self.items.count ))))
+        else if(isextraServiceRow == true)
         {
             cell.lblOption.text = ""
             cell.lblItem.text = "\(self.extraServiceValue)"
-            cell.lblItem.font = UIFont(name: "Helvetica-Bold", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 24 : 19)
+            cell.lblItem.font = UIFont(name: "Helvetica-Bold", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 30 : 25)
             cell.lblItem.textAlignment = .center
             cell.vwDashedLine.isHidden = false
             cell.lblItem.numberOfLines = 1
+        }
+        else if(isallergyInfoRow == true)
+        {
+            cell.lblOption.text = ""
+            cell.vwDashedLine.isHidden = false
+            cell.lblItem.text = "* Allergy: \(self.allergyInfoText)"
+            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 46 : 41)
+            cell.lblItem.textAlignment = .left
+            cell.lblItem.numberOfLines = 0
         }
         else if(self.splInstCount == 1 && (indexPath.row == self.items.count))
         {
             cell.lblOption.text = ""
             cell.vwDashedLine.isHidden = false
             cell.lblItem.text = "* \(self.specialInstText)"
-            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 38 : 33)
+            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 46 : 41)
             cell.lblItem.textAlignment = .left
             cell.lblItem.numberOfLines = 0
         }
@@ -193,9 +268,9 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
             cell.lblOption.text = ""
             cell.lblItem.numberOfLines = 1
             cell.lblItem.textAlignment = .left
-            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 47 : 42)
-            cell.lblQuantity.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 47 : 42)
-            cell.lblOption.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 47 : 42)
+            cell.lblItem.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 56 : 51)
+            cell.lblQuantity.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 56 : 51)
+            cell.lblOption.font = UIFont(name: "Helvetica", size: (UIDevice.current.userInterfaceIdiom == .pad) ? 56 : 51)
             var catName = self.items[indexPath.row].CatName
             if(self.items[indexPath.row].SubCatName.count > 0)
             {
@@ -233,8 +308,16 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
             if(self.isForGuest == 1) //&& self.items[indexPath.row].Quantity > 1
             {
                 //itemName = "\(self.items[indexPath.row].Quantity!) X \(itemName!) "
-                cell.lblQuantity.text = "X \(self.items[indexPath.row].Quantity!)"
-                cell.cns_lblQuantity_Left.constant = 5
+                if(self.items[indexPath.row].Quantity != nil)
+                {
+                    cell.lblQuantity.text = "X \(self.items[indexPath.row].Quantity!)"
+                    cell.cns_lblQuantity_Left.constant = 5
+                }
+                else
+                {
+                    cell.lblQuantity.text = ""
+                    cell.cns_lblQuantity_Left.constant = 0
+                }
             }
             else
             {
@@ -289,7 +372,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
 //        self.imgTest.contentMode = .scaleToFill
 //        self.imgTest.image = self.logData
     
-         showIndicator("Please wait...");
+         showIndicator("Please wait...")
          //textWarnings.text = ""
          let queue = OperationQueue()
          queue.addOperation({ [self] in
@@ -298,6 +381,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
              }
              else
              {
+                 self.setUpPrintStatus()
                  if(self.data.count != self.allDtCount)
                  {
                      
@@ -346,6 +430,9 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
         self.IsEscortForBrk = self.data[self.indx].IsEscortForBrk
         self.IsEscortForLunch = self.data[self.indx].IsEscortForLunch
         self.IsEscortForDinner = self.data[self.indx].IsEscortForDinner
+        self.IsTakeoutForBrk = self.data[self.indx].IsTakeoutForBrk
+        self.IsTakeoutForLunch = self.data[self.indx].IsTakeoutForLunch
+        self.IsTakeoutForDinner = self.data[self.indx].IsTakeoutForDinner
         self.isForGuest = self.data[self.indx].isForGuest
         
         self.items =  self.data[self.indx].Items
@@ -368,7 +455,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
 //                    self.arrDinnerItems = self.arrDinnerItems.filter({ !$0.CatName.uppercased().contains("SOUP") && !$0.CatName.uppercased().contains("DESSERT")})
         
         
-        if(self.data[self.indx].SpecialInst!.count  > 0)
+        if(self.data[self.indx].SpecialInst!.count  > 0 && self.isForGuest == 0)
         {
             self.splInstCount = 1
             self.specialInstText = self.data[self.indx].SpecialInst!
@@ -379,7 +466,18 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
             self.specialInstText = ""
         }
         
-        if(self.data[self.indx].FoodTexture!.count > 0)
+        if(self.data[self.indx].AllergyInfo!.count  > 0 && self.isForGuest == 0)
+        {
+            self.allergyInfoCount = 1
+            self.allergyInfoText = self.data[self.indx].AllergyInfo!
+        }
+        else
+        {
+            self.allergyInfoCount = 0
+            self.allergyInfoText = ""
+        }
+        
+        if(self.data[self.indx].FoodTexture!.count > 0 && self.isForGuest == 0)
         {
 //                        self.lblTextureSpace.isHidden = false
 //                        self.vwTextureTop.isHidden = false
@@ -400,7 +498,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
        
         if(self.currentSelectedIndex == 0)
         {
-            if(self.IsTrayForBrk == 1 || self.IsEscortForBrk == 1)
+            if(self.IsTrayForBrk == 1 || self.IsEscortForBrk == 1 || self.IsTakeoutForBrk == 1)
             {
                 self.extraServiceCount = 1
                 self.extraServiceValue = (self.IsTrayForBrk == 1) ? "Tray Service" : ""
@@ -415,6 +513,17 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
                         self.extraServiceValue = "Escort Service"
                     }
                 }
+                if(self.IsTakeoutForBrk == 1)
+                {
+                    if(self.extraServiceValue.count > 0)
+                    {
+                        self.extraServiceValue = self.extraServiceValue + ", Takeout"
+                    }
+                    else
+                    {
+                        self.extraServiceValue = "Takeout"
+                    }
+                }
             }
             else
             {
@@ -424,7 +533,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
         }
         else if(self.currentSelectedIndex == 1)
         {
-            if(self.IsTrayForLunch == 1 || self.IsEscortForLunch == 1)
+            if(self.IsTrayForLunch == 1 || self.IsEscortForLunch == 1 || self.IsTakeoutForLunch == 1)
             {
                 self.extraServiceCount = 1
                 self.extraServiceValue = (self.IsTrayForLunch == 1) ? "Tray Service" : ""
@@ -439,6 +548,17 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
                         self.extraServiceValue = "Escort Service"
                     }
                 }
+                if(self.IsTakeoutForLunch == 1)
+                {
+                    if(self.extraServiceValue.count > 0)
+                    {
+                        self.extraServiceValue = self.extraServiceValue + ", Takeout"
+                    }
+                    else
+                    {
+                        self.extraServiceValue = "Takeout"
+                    }
+                }
             }
             else
             {
@@ -448,7 +568,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
         }
         else
         {
-            if(self.IsTrayForDinner == 1 || self.IsEscortForDinner == 1)
+            if(self.IsTrayForDinner == 1 || self.IsEscortForDinner == 1 || self.IsTakeoutForDinner == 1)
             {
                 self.extraServiceCount = 1
                 self.extraServiceValue = (self.IsTrayForDinner == 1) ? "Tray Service" : ""
@@ -461,6 +581,17 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
                     else
                     {
                         self.extraServiceValue = "Escort Service"
+                    }
+                }
+                if(self.IsTakeoutForDinner == 1)
+                {
+                    if(self.extraServiceValue.count > 0)
+                    {
+                        self.extraServiceValue = self.extraServiceValue + ", Takeout"
+                    }
+                    else
+                    {
+                        self.extraServiceValue = "Takeout"
                     }
                 }
             }
@@ -486,7 +617,7 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
        
         DispatchQueue.main.asyncAfter(deadline: .now() +  0.08) {
             let hgt = UIScreen.main.bounds.size.height - self.tblOrderData.frame.origin.y - self.tblOrderData.contentSize.height
-            self.logData = self.resizeImage(img: self.view.captureSS(hgtToMinus: hgt))
+            self.logData = self.resizeImage(img: self.view.captureSS(hgtToMinus: hgt,safeAreaTop: self.view.safeAreaInsets.top))
             self.btnBack.isHidden = false
         }
     }
@@ -579,6 +710,33 @@ class PrintVC: UIViewController, UITableViewDelegate, UITableViewDataSource, Epo
 //                return false
 //            }
             
+        }
+    }
+    
+    func setUpPrintStatus()
+    {
+        
+        var meal_type = "breakfast"
+        if(self.currentSelectedIndex == 1){meal_type = "lunch"}
+        else if(self.currentSelectedIndex == 2){meal_type = "dinner"}
+        
+        NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + "update-print-status", parameters: ["room_id" : self.data[self.indx].RoomId!, "is_guest" : self.data[self.indx].isForGuest!, "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "meal_type" : meal_type]) { (response) in
+            
+            if(response.error == nil)
+            {
+                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
+                {
+                    print("print status updated \(response.result)")
+                }
+                else
+                {
+                    self.showMessageAlert(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
+                }
+            }
+            else
+            {
+                self.showMessageAlert(message: response.error!.localizedDescription)
+            }
         }
     }
     

@@ -127,13 +127,13 @@ extension UIView {
         layer.mask = mask
     }
     
-    func captureSS(hgtToMinus : CGFloat) -> UIImage {
-        UIGraphicsBeginImageContext(CGSize(width: bounds.size.width, height: bounds.size.height - hgtToMinus - 40))
+    func captureSS(hgtToMinus : CGFloat, safeAreaTop :  CGFloat) -> UIImage {
+        UIGraphicsBeginImageContext(CGSize(width: bounds.size.width, height: bounds.size.height - hgtToMinus - safeAreaTop)) // -40
 
        // defer{ UIGraphicsEndImageContext() }
         
         let context = UIGraphicsGetCurrentContext()
-        context?.translateBy(x: 0, y: -40)
+        context?.translateBy(x: 0, y: -safeAreaTop)
         
         self.layer.render(in: context!)
 

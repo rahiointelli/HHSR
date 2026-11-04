@@ -631,7 +631,7 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         dateFormatter.locale = self.dtPicker.locale
         //"dd MMM YYYY hh:mm a"
         // HH:mm:ss z
-        if(self.btnDateOfNotiRes.title(for: .normal) != "Select Date/Time")
+        if(self.btnDateOfNotiRes.title(for: .normal) != "Select Date/Time" && self.btnDateOfNotiRes.title(for: .normal) != "")
         {
             let date = dateFormatter.date(from: self.btnDateOfNotiRes.title(for: .normal)!)
             dateFormatter.dateFormat =  "yyyy-MM-dd hh:mm a"
@@ -664,7 +664,7 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         dateFormatter.locale = self.dtPicker.locale
         //"dd MMM YYYY hh:mm a"
         // HH:mm:ss z
-        if(self.btnNotiDateTime.title(for: .normal) != "Select Date/Time")
+        if(self.btnNotiDateTime.title(for: .normal) != "Select Date/Time" && self.btnNotiDateTime.title(for: .normal) != "")
         {
             let date = dateFormatter.date(from: self.btnNotiDateTime.title(for: .normal)!)
             dateFormatter.dateFormat =  "yyyy-MM-dd hh:mm a"
@@ -697,7 +697,7 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         dateFormatter.locale = self.dtPicker.locale
         //"dd MMM YYYY hh:mm a"
         // HH:mm:ss z
-        if(self.btnDateOfNotiFamDoc.title(for: .normal) != "Select Date/Time")
+        if(self.btnDateOfNotiFamDoc.title(for: .normal) != "Select Date/Time" && self.btnDateOfNotiFamDoc.title(for: .normal) != "")
         {
             let date = dateFormatter.date(from: self.btnDateOfNotiFamDoc.title(for: .normal)!)
             dateFormatter.dateFormat =  "yyyy-MM-dd hh:mm a"
@@ -730,7 +730,7 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
         dateFormatter.locale = self.dtPicker.locale
         //"dd MMM YYYY hh:mm a"
         // HH:mm:ss z
-        if(self.btnDateOfNotiOther.title(for: .normal) != "Select Date/Time")
+        if(self.btnDateOfNotiOther.title(for: .normal) != "Select Date/Time" &&  self.btnDateOfNotiOther.title(for: .normal) != "")
         {
             let date = dateFormatter.date(from: self.btnDateOfNotiOther.title(for: .normal)!)
             dateFormatter.dateFormat =  "yyyy-MM-dd hh:mm a"
@@ -1325,14 +1325,14 @@ class UnusalOccuranceVC: UIViewController, UITextFieldDelegate, UIImagePickerCon
             dictItem["notified_resident_tm"] = self.btnDateOfNotiRes.title(for: .normal)!.suffix(8) as AnyObject
         }
         
-        if(self.btnDateOfNotiFamDoc.title(for: .normal) != "Select Date/Time")
+        if(self.btnDateOfNotiFamDoc.title(for: .normal) != "Select Date/Time" && self.btnDateOfNotiFamDoc.title(for: .normal) != "")
         {
             dictItem["notified_family_doctor_date"] = self.btnDateOfNotiFamDoc.title(for: .normal)! as AnyObject
             dictItem["notified_family_doctor_dt"] = self.btnDateOfNotiFamDoc.title(for: .normal)!.prefix(11) as AnyObject
             dictItem["notified_family_doctor_tm"] = self.btnDateOfNotiFamDoc.title(for: .normal)!.suffix(8) as AnyObject
         }
         
-        if(self.btnDateOfNotiOther.title(for: .normal) != "Select Date/Time")
+        if(self.btnDateOfNotiOther.title(for: .normal) != "Select Date/Time" && self.btnDateOfNotiOther.title(for: .normal) != "")
         {
             dictItem["notified_other_date"] = self.btnDateOfNotiOther.title(for: .normal)! as AnyObject
             dictItem["notified_other_dt"] = self.btnDateOfNotiOther.title(for: .normal)!.prefix(11) as AnyObject

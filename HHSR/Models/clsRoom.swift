@@ -38,7 +38,24 @@ class clsReportRoom : NSObject
     var HasDinnerOrder : Int!
     var isForGuest : Int!
     
+    init(RName: String!, RId: Int!, HasSplInst: Int!, HasBrkOrder: Int!, HasLunchOrder: Int!, HasDinnerOrder: Int!, IsForGuest: Int!)
+    {
+        self.RoomName = RName
+        self.RoomId = RId
+        self.HasSpecialInst = HasSplInst
+        self.HasBrkOrder = HasBrkOrder
+        self.HasLunchOrder = HasLunchOrder
+        self.HasDinnerOrder = HasDinnerOrder
+        self.isForGuest = IsForGuest
+        
+    }
     
+    init(RName: String!, RId: Int!, HasSplInst: Int!)
+    {
+        self.RoomName = RName
+        self.RoomId = RId
+        self.HasSpecialInst = HasSplInst        
+    }
     init(fromJson json: JSON!){
         if json.isEmpty{
             return

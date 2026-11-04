@@ -24,6 +24,7 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var cns_btnLogout_width: NSLayoutConstraint!
     @IBOutlet weak var cns_btnLogout_height: NSLayoutConstraint!
     @IBOutlet weak var lblLoggedInAs: UILabel!
+    @IBOutlet weak var btnBack: UIButton!
     
   
   //  var arRoomName : [String] = []
@@ -31,9 +32,15 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
     var selectedRoomID : Int = 0
     var occupancy : Int = 0
   //  var lastMenuDate : String = ""
+//    var timer: Timer?
+//    var counter = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        
+        self.lblLoggedInAs.isHidden = (AppDelegate.sharedDelegate().showIncident == 1) ? true : false
+        self.btnBack.isHidden = (AppDelegate.sharedDelegate().showIncident == 1) ? false : true
     
         if(AppDelegate.sharedDelegate().UserRole == "superadmin")
         {
@@ -46,6 +53,12 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
         else if(AppDelegate.sharedDelegate().UserRole == "concierge")
         {
             self.lblLoggedInAs.text = "Logged in as Concierge"
+        }
+        else if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        {
+            self.lblLoggedInAs.text = "Logged in as Kitchen"
+            self.lblLoggedInAs.isHidden = true
+            self.btnBack.isHidden = false
         }
         else
         {
@@ -88,7 +101,46 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
             self.cns_btnReport_top.constant = UIScreen.main.bounds.size.height * (164/233)
             self.cns_btnLogout_top.constant = UIScreen.main.bounds.size.height * (188/233)
         }
-    }    
+        
+//        timer = Timer.scheduledTimer(timeInterval: 45.0,
+//                                     target: self,
+//                                     selector: #selector(refreshRoomList),
+//                                     userInfo: nil,
+//                                     repeats: true)
+    }
+    
+//    @objc func refreshRoomList() {
+//     
+//        NetworkUtilities.shared.makeGETRequest(with: API.baseURL + "rooms-list") { (response) in
+//         
+//            if (response.error == nil)
+//            {
+//                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
+//                {
+//                    print("refreshroom called \(self.counter)")
+//                    self.counter = self.counter + 1
+//                    AppDelegate.sharedDelegate().arRoomList.removeAll()
+//                    AppDelegate.sharedDelegate().arRoomList.append(contentsOf: response.result[MainResponseCodeConstant.keyRoomsList].arrayValue.compactMap(clsRoom.init))
+//                }
+//                else
+//                {
+//                    // CommonUtility.shared.showErrorAlertOnWindow(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
+//                }
+//            }
+//            else
+//            {
+//                //                 if(response.error!.localizedDescription == ErrorMsg.keyTurnOnAppCellularData)
+//                //                 {
+//                //                     CommonUtility.shared.showAppCellularDataAlertOnWindow(message: response.error!.localizedDescription)
+//                //                 }
+//                //                 else
+//                //                 {
+//                //                     CommonUtility.shared.showErrorAlertOnWindow(message: response.error!.localizedDescription)
+//                //                 }
+//            }
+//        }
+//    }
+
     
     @objc func DoneKeyboard()
     {
@@ -130,14 +182,14 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
     {
         let reportVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ReportVC") as! ReportVC
         reportVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
-        if (reportVC.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
-        {
-            reportVC.selectedDate = reportVC.lastMenuDate
-        }
-        else
-        {
-            reportVC.selectedDate = Date()
-        }
+//        if (reportVC.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
+//        {
+//            reportVC.selectedDate = reportVC.lastMenuDate
+//        }
+//        else
+//        {
+//            reportVC.selectedDate = Date()
+//        }
         self.navigationController?.pushViewController(reportVC, animated: false)
     }
     
@@ -162,6 +214,16 @@ class SearchRoomVC: UIViewController, UITextFieldDelegate {
         
         if(AppDelegate.sharedDelegate().arRoomList.map({ $0.RoomName.lowercased() }).contains(self.txtRoomSelection.text?.lowercased()))
         {
+            
+            let pos = AppDelegate.sharedDelegate().arRoomList.map({ $0.RoomName.lowercased() }).firstIndex(of: self.txtRoomSelection.text!.lowercased())
+            //self.lblSelectedRoom.text = self.arRoomName[pos!]
+            self.txtRoomSelection.text = AppDelegate.sharedDelegate().arRoomList[pos!].RoomName
+            //self.btnGo.isEnabled = true
+            self.selectedRoomName = AppDelegate.sharedDelegate().arRoomList[pos!].RoomName
+            self.selectedRoomID = AppDelegate.sharedDelegate().arRoomList[pos!].RoomId
+            self.occupancy = AppDelegate.sharedDelegate().arRoomList[pos!].Occupancy
+            
+            AppDelegate.sharedDelegate().IsForkitchenSummary = false
             let MealItemsVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MealItemsVC") as! MealItemsVC
             MealItemsVC.selectedRoomName = self.selectedRoomName
             MealItemsVC.selectedRoomID = self.selectedRoomID

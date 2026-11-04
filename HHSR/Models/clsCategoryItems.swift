@@ -70,11 +70,15 @@ class clsCombinedPrintItems : NSObject
     var IsEscortForBrk : Int!
     var IsEscortForLunch : Int!
     var IsEscortForDinner : Int!
+    var IsTakeoutForBrk : Int!
+    var IsTakeoutForLunch : Int!
+    var IsTakeoutForDinner : Int!
     var RoomId : Int!
     var RoomName : String!
     var ResidentName : String!
     var SpecialInst : String!
     var FoodTexture : String!
+    var AllergyInfo : String!
    
     init(fromJson json: JSON!){
         if json.isEmpty{
@@ -89,11 +93,15 @@ class clsCombinedPrintItems : NSObject
         IsEscortForBrk = json["is_brk_escort_service"].intValue
         IsEscortForLunch = json["is_lunch_escort_service"].intValue
         IsEscortForDinner = json["is_dinner_escort_service"].intValue
+        IsTakeoutForBrk = json["is_brk_takeout_service"].intValue
+        IsTakeoutForLunch = json["is_lunch_takeout_service"].intValue
+        IsTakeoutForDinner = json["is_dinner_takeout_service"].intValue
         RoomId = json["room_id"].intValue
         RoomName = json["room_name"].stringValue
         ResidentName = json["resident_name"].stringValue
         SpecialInst = json["special_instruction"].stringValue
         FoodTexture = json["food_texture"].stringValue
+        AllergyInfo = json["allergy_info"].stringValue
     }
     
   

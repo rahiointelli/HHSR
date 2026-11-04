@@ -6,13 +6,14 @@
 //
 
 import UIKit
+import FSCalendar
 import SDWebImage
 import SwiftyJSON
 
-class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, HeplerDelegate {
+class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, HeplerDelegate, FSCalendarDataSource, FSCalendarDelegate, FSCalendarDelegateAppearance, HeplerDelegateWithImg {
 
     @IBOutlet weak var lblRoomName : UILabel!
-    @IBOutlet weak var lblSelectedDate: UILabel!
+    @IBOutlet weak var lblSelectedDate: UIButton!
     @IBOutlet weak var tblItemList: UITableView!
     @IBOutlet weak var Mealsegment: UIStackView!
     @IBOutlet weak var btnBrk: UIButton!
@@ -46,6 +47,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
     @IBOutlet weak var cns_chkSrvBoxWidth: NSLayoutConstraint!
     @IBOutlet weak var cns_stkViewTop: NSLayoutConstraint!
     @IBOutlet weak var cns_stkViewBottom: NSLayoutConstraint!
+    @IBOutlet weak var full_calendar: FSCalendar!
     
     var selectedRoomName : String = ""
     var selectedRoomID : Int = 0
@@ -69,6 +71,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
     var IsTrayForBrk = 0
     var IsTrayForLunch = 0
     var IsTrayForDinner = 0
+    var IsForkitchenSummary = false
     
     func heightChanged() {
         
@@ -97,15 +100,16 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
         
 //        if(AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "concierge")
 //        {
-            self.cns_btnBackWidth.constant = 22
-            self.cns_btnBackRight.constant = 13
+            self.cns_btnBackWidth.constant = 32
+            self.cns_btnBackRight.constant = 8//13
 //        }
         
-        
-        let img = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? UIImage(named: "btn_report") : ((AppDelegate.sharedDelegate().LanguagePref == 0) ? UIImage(named: "btn_submit") : UIImage(named: "btn_submit_cn"))
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        let img = (self.IsForkitchenSummary == true) ? UIImage(named: "btn_report") : ((AppDelegate.sharedDelegate().LanguagePref == 0) ? UIImage(named: "btn_submit") : UIImage(named: "btn_submit_cn"))
         self.btnSubmit.setBackgroundImage(img, for: .normal)
                     
-        self.lblRoomName.text = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? "Kitchen" : "# \(self.selectedRoomName)"
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        self.lblRoomName.text = (self.IsForkitchenSummary == true) ? "Kitchen" : "# \(self.selectedRoomName)"
         //self.btnDoubleOccupancy.isHidden = (self.Occupancy == 2) ? false : true
         // Do any additional setup after loading the view.
         
@@ -148,12 +152,100 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
         self.tblItemList.register(UINib(nibName: "TblAddItemCell", bundle: nil), forCellReuseIdentifier: "TblAddItemCell")
         self.tblItemList.register(UINib(nibName: "TblSubItemListCell", bundle: nil), forCellReuseIdentifier: "TblSubItemListCell")
         
+        self.full_calendar.dataSource = self
+        self.full_calendar.delegate = self
+        self.full_calendar.scrollDirection = .vertical
+        self.full_calendar.allowsMultipleSelection = false
+        self.full_calendar.pagingEnabled = false
+        //self.full_calendar.setScope(FSCalendarScope.week, animated: false)
+        //self.full_calendar.appearance.headerMinimumDissolvedAlpha = 0
+        self.full_calendar.appearance.caseOptions = .weekdayUsesSingleUpperCase;
+        self.full_calendar.appearance.weekdayTextColor = UIColor.black
+        self.full_calendar.appearance.headerTitleColor = UIColor.black
+        self.full_calendar.appearance.selectionColor = CommonUtility.shared.hexStringToUIColor(hex: "102139")
+        self.full_calendar.appearance.todayColor = CommonUtility.shared.hexStringToUIColor(hex: "ef433b")
+        //self.full_calendar.appearance.titleTodayColor = calendar.appearance.titleDefaultColor
+        self.full_calendar.appearance.borderRadius = 0.4
+        self.full_calendar.appearance.titleFont = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica", size: 24.0)! : UIFont(name: "Helvetica", size: 19.0)!
+        self.full_calendar.appearance.headerTitleFont = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica-Bold", size: 22.0)! : UIFont(name: "Helvetica-Bold", size: 17.0)!
+        self.full_calendar.appearance.weekdayFont = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica-Bold", size: 17.0)! : UIFont(name: "Helvetica-Bold", size: 12.0)!
+        self.full_calendar.select(self.selectedDate, scrollToDate: true)
+        self.full_calendar.placeholderType = .none
+        
+        if(AppDelegate.sharedDelegate().LanguagePref == 1)
+        {
+            self.full_calendar.locale = NSLocale(localeIdentifier: "zh-Hans") as Locale
+        }
+        
         self.compareSelectedDate()
         
         self.setSelectedDateLabel()
         self.CallOrderListService()
     }
+    
+    @IBAction func btnCalendar_Clicked(_ sender: Any)
+    {
+//        if(self.full_calendar.isHidden == true)
+//        {
+//            self.full_calendar.setCurrentPage(self.calendar.currentPage, animated: true)
+//        }
+//        else
+//        {
+//            self.calendar.setCurrentPage(self.full_calendar.currentPage, animated: true)
+//        }
+        
+        self.full_calendar.isHidden = !self.full_calendar.isHidden
+    }
 
+    func minimumDate(for calendar: FSCalendar) -> Date {
+        //return  Date() //stDate!
+        formatter.dateFormat = "yyyy MM dd"
+        var minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+        if self.lastMenuDate.compare(minDate) == ComparisonResult.orderedAscending
+        {
+            NSLog("date1 before date2");
+            minDate = Calendar.current.date(byAdding: .month, value: -3, to: formatter.date(from: self.lastMenuDate.toString(dateFormat: "yyyy MM dd"))!)!
+        }
+        return minDate
+        
+    }
+
+    func maximumDate(for calendar: FSCalendar) -> Date {
+//        formatter.dateFormat = "yyyy MM dd"
+//        let endDate = Calendar.current.date(byAdding: .month, value: 2, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+//        let range = Calendar.current.range(of: .day, in: .month, for: endDate)!
+//        let edDate = formatter.date(from: "\(endDate.toString(dateFormat: "yyyy MM")) \(range.count)")
+//        return edDate!
+        return self.lastMenuDate
+    }
+    
+    func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
+        let dateString = date.toString(dateFormat: "yyyy/MM/dd")
+        let todaydate = Date().toString(dateFormat: "yyyy/MM/dd")
+        if (dateString == todaydate) {
+            return CommonUtility.shared.hexStringToUIColor(hex: "ef433b")
+        }
+
+        return appearance.selectionColor
+    }
+    
+    func calendar(_ calendar: FSCalendar, didSelect date: Date, at monthPosition: FSCalendarMonthPosition) {
+        self.selectedDate = date
+        self.canIncNoOfGuest = true
+        self.canDescNoOfGuest = true
+        self.compareSelectedDate()
+        self.setSelectedDateLabel()
+        self.CallOrderListService()
+      
+        self.full_calendar.isHidden = true
+        
+        let diff = Date().interval(ofComponent: .day, fromDate: self.selectedDate)
+          print("difference is \(diff)")
+        
+        //self.CallLogListService()
+    }
+   
+    
     
     func setSelectedDateLabel()
     {
@@ -163,11 +255,11 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
         if(Calendar.current.isDateInToday(self.selectedDate))
         {
             let td = "today".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
-            self.lblSelectedDate.text = "\(td) \(cl_mnth) \(self.selectedDate.toString(dateFormat: "d, yyyy"))"
+            self.lblSelectedDate.setTitle("\(td) \(cl_mnth) \(self.selectedDate.toString(dateFormat: "d, yyyy"))", for: .normal)
         }
         else
         {
-            self.lblSelectedDate.text = "\(cl_mnth) \(self.selectedDate.toString(dateFormat: "d, yyyy"))"
+            self.lblSelectedDate.setTitle("\(cl_mnth) \(self.selectedDate.toString(dateFormat: "d, yyyy"))", for: .normal)
         }
     }
     
@@ -258,7 +350,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             cell.lbltext.text = (AppDelegate.sharedDelegate().LanguagePref == 0) ? (menuItems[indexPath.row]).ItemName! : ((tl.count == 0) ? (menuItems[indexPath.row]).ItemName! : tl)
             return cell
         }
-        else if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem || menuItems[indexPath.row].ItemImage.count == 0)
+        //else if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem || menuItems[indexPath.row].ItemImage.count == 0)
+        else if(menuItems[indexPath.row].ItemImage.count == 0)
         {
             let cell = tableView.dequeueReusableCell(withIdentifier: "TblSubItemListCell", for: indexPath) as! TblSubItemListCell
             cell.selectionStyle = .none
@@ -304,8 +397,6 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 cell.cns_TitleTop.constant = 10
                 cell.cns_TitleBottom.constant = 10
                 cell.cns_vwSeperateor_height.constant = 0
-                
-                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
             }
             else
             {
@@ -320,10 +411,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 {
                     cell.cns_vwSeperateor_height.constant = 1
                 }
-                
-                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
-                cell.helperDelegate = self
             }
+            cell.cl_cell_width = (UIScreen.main.bounds.size.width - (cell.cns_labelLeading.constant-10))/2
                        
             cell.lbl_quantity.text = "\(menuItems[indexPath.row].ItemQuantity!)"
             cell.btn_plus.tag = (indexPath.section * 1000) + indexPath.row
@@ -331,12 +420,22 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             cell.btn_plus.addTarget(self, action: #selector(AddQuantity), for: .touchUpInside)
             cell.btn_minus.addTarget(self, action: #selector(MinusQuantity), for: .touchUpInside)
             
-            if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            if(self.IsForkitchenSummary == true)
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() +  0.05) {
                     cell.lbl_quantity.font = UIFont(name: "Helvetica-Bold", size: ((UIDevice.current.userInterfaceIdiom == .pad) ? 28.0 : 22.0))
+                    cell.btn_plus.isHidden = true
+                    cell.btn_minus.isHidden = true
+                    cell.vw_container.backgroundColor = .clear
                 }
             }
+            else
+            {
+                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
+                cell.helperDelegate = self
+            }
+
 
             return cell
         }
@@ -347,14 +446,14 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             
             let tl = (menuItems[indexPath.row]).ChineseName!
                                     
-            if(indexPath.row == menuItems.count - 1)
-            {
-                cell.cns_vwSeperateor_height.constant = 0
-            }
-            else
-            {
-                cell.cns_vwSeperateor_height.constant = 1
-            }
+//            if(indexPath.row == menuItems.count - 1)
+//            {
+//                cell.cns_vwSeperateor_height.constant = 0
+//            }
+//            else
+//            {
+//                cell.cns_vwSeperateor_height.constant = 1
+//            }
             
             cell.lblItemName.text = (AppDelegate.sharedDelegate().LanguagePref == 0) ? (menuItems[indexPath.row]).ItemName! : ((tl.count == 0) ? (menuItems[indexPath.row]).ItemName! : tl)
             if(menuItems[indexPath.row].ItemImage.count > 0)
@@ -366,6 +465,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 cell.imgItemImage.sd_setImage(with: URL(string: menuItems[indexPath.row].ItemImage.ChangeSpacetoPer20())!, placeholderImage: UIImage(named: ""), options: .refreshCached, completed: nil)
                // print("img view is \(cell.imgItemImage)")
             }
+            
+            var canEdit = false
             
             if((self.currentSelectedIndex == 0 && self.canEditBrk) || (self.currentSelectedIndex == 1 && self.canEditLunch) || (self.currentSelectedIndex == 2 && self.canEditDinner))
             {
@@ -387,13 +488,37 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 {
                     cell.btn_plus.setTitleColor(UIColor.black, for: .normal)
                 }
+                
+                canEdit = true
             }
             else
             {
                 cell.btn_minus.setTitleColor(UIColor.lightGray, for: .normal)
                 cell.btn_plus.setTitleColor(UIColor.lightGray, for: .normal)
             }
-                
+            
+            if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem)
+            {
+                cell.cns_labelLeading.constant = 15
+               // cell.cns_TitleTop.constant = 10
+               // cell.cns_TitleBottom.constant = 10
+                cell.cns_vwSeperateor_height.constant = 0
+            }
+            else
+            {
+                cell.cns_labelLeading.constant = 0
+              //  cell.cns_TitleTop.constant = 20
+              //  cell.cns_TitleBottom.constant = 20
+                if(indexPath.row == menuItems.count - 1)
+                {
+                    cell.cns_vwSeperateor_height.constant = 0
+                }
+                else
+                {
+                    cell.cns_vwSeperateor_height.constant = 1
+                }
+            }
+            cell.cl_cell_width = (UIScreen.main.bounds.size.width - cell.cns_labelLeading.constant)/2
             
             cell.lbl_quantity.text = "\(menuItems[indexPath.row].ItemQuantity!)"
             cell.btn_plus.tag = (indexPath.section * 1000) + indexPath.row
@@ -402,11 +527,22 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             cell.btn_minus.addTarget(self, action: #selector(MinusQuantity), for: .touchUpInside)
             
             
-            if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            if(self.IsForkitchenSummary == true)
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() +  0.05) {
                     cell.lbl_quantity.font = UIFont(name: "Helvetica-Bold", size: ((UIDevice.current.userInterfaceIdiom == .pad) ? 28.0 : 22.0))
+                  //  cell.lblTitleTop.constant = (cell.imgItemImage.frame.size.height - cell.lblItemName.frame.size.height)/2
+                    cell.btn_plus.isHidden = true
+                    cell.btn_minus.isHidden = true
+                    cell.vw_container.backgroundColor = .clear
                 }
+            }
+            else
+            {
+                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
+                cell.helperDelegate = self
+                
             }
             
             return cell
@@ -455,7 +591,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.tblItemList.isHidden = (self.arrBreakfastItems.count == 0) ? true : false
             //self.vw_tray.isHidden = (self.arrBreakfastItems.count == 0) ? true : false
             self.cns_lblGuideline_top.constant = 25
-            self.lblGuideline.text = (self.arrBreakfastItems.count == 0) ? "" : AppDelegate.sharedDelegate().guidelineText
+            self.lblGuideline.text = (self.arrBreakfastItems.count == 0) ? "" : AppDelegate.sharedDelegate().brk_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
@@ -466,7 +602,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditBrk == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditBrk == true)
         }
         else if(selectedIndex == 1)
         {
@@ -475,7 +612,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.tblItemList.isHidden = (self.arrLunchItems.count == 0) ? true : false
             //self.vw_tray.isHidden = (self.arrLunchItems.count == 0) ? true : false
             self.cns_lblGuideline_top.constant = 25
-            self.lblGuideline.text = (self.arrLunchItems.count == 0) ? "" :AppDelegate.sharedDelegate().guidelineText
+            self.lblGuideline.text = (self.arrLunchItems.count == 0) ? "" :AppDelegate.sharedDelegate().lunch_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
@@ -486,7 +623,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditLunch == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditLunch == true)
         }
         else
         {
@@ -494,8 +632,10 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.lblNoMenu.isHidden = (self.arrDinnerItems.count == 0) ? false : true
             self.tblItemList.isHidden = (self.arrDinnerItems.count == 0) ? true : false
             //self.vw_tray.isHidden = (self.arrDinnerItems.count == 0) ? true : false
-            self.cns_lblGuideline_top.constant = 0
-            self.lblGuideline.text = ""
+//            self.cns_lblGuideline_top.constant = 0
+//            self.lblGuideline.text = ""
+            self.cns_lblGuideline_top.constant = 25
+            self.lblGuideline.text = (self.arrDinnerItems.count == 0) ? "" :AppDelegate.sharedDelegate().dinner_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
@@ -506,7 +646,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditDinner == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditDinner == true)
         }
         
         let totalOrders = self.arItemList.map({ $0.NoOfItemsSelected }).reduce(0, +)
@@ -556,18 +697,18 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 self.arItemList[sec].LatestSelectedIndex = rw
                     
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemOptions.count > 0 && (menuItems[rw].ItemOptions.count == menuItems[rw].ItemOptions.filter({ $0.IsSelected == 0 }).count))
                     {
                         menuItems[rw].ItemOptions[0].IsSelected = 1
                     }
                     menuItems[rw].isExpanded = 1
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
             }
@@ -581,14 +722,14 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                         var isremove = true
                         if(self.Occupancy > 1)
                         {
-                            if(menuItems[rw].ItemQuantity == 1)
-                            {
-                                
-                            }
-                            else if(i != self.arItemList[sec].LatestSelectedIndex)
-                            {
-                                isremove = false
-                            }
+////                            if(menuItems[rw].ItemQuantity == 1)
+////                            {
+////
+////                            }
+////                            else if(i != self.arItemList[sec].LatestSelectedIndex)
+////                            {
+////                                isremove = false
+////                             }
 //                            if(menuItems[i].ItemQuantity == self.Occupancy ||  menuItems[rw].ItemQuantity == 1)
 //                            {
 //
@@ -603,11 +744,11 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                         {
                             menuItems[i].ItemQuantity = menuItems[i].ItemQuantity  - 1
                             
-                            if(menuItems[i].ItemType == ItemType.SubCatItem)
-                            {
-                            }
-                            else
-                            {
+//                            if(menuItems[i].ItemType == ItemType.SubCatItem)
+//                            {
+//                            }
+//                            else
+//                            {
                                 if(menuItems[i].ItemQuantity == 0)
                                 {
                                     menuItems[i].isExpanded = 0
@@ -615,7 +756,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                                     menuItems[i].Preferences.forEach({ $0.IsSelected = 0 })
                                 }
                                // self.tblItemList.reloadRows(at: [IndexPath(row: i, section: sec)], with: .automatic)
-                            }
+//                            }
                             
                             self.convertToDict(menuItem: menuItems[i])
                             print("in add remove previous at index \(i)")
@@ -630,18 +771,18 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 self.arItemList[sec].LatestSelectedIndex = rw
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
                 
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemOptions.count > 0 && (menuItems[rw].ItemOptions.count == menuItems[rw].ItemOptions.filter({ $0.IsSelected == 0 }).count))
                     {
                         menuItems[rw].ItemOptions[0].IsSelected = 1
                     }
                     menuItems[rw].isExpanded = 1
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
@@ -775,11 +916,11 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                 self.arItemList[sec].NoOfItemsSelected = self.arItemList[sec].NoOfItemsSelected - 1
                 menuItems[rw].ItemQuantity = menuItems[rw].ItemQuantity - 1
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemQuantity == 0)
                     {
                         menuItems[rw].isExpanded = 0
@@ -787,7 +928,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                         menuItems[rw].Preferences.forEach({ $0.IsSelected = 0 })
                     }
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
@@ -797,11 +938,12 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
 
     @IBAction func btnSubmit_Clicked(_ sender: Any)
     {
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        if(self.IsForkitchenSummary == true)
         {
             let reportVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ReportVC") as! ReportVC
             reportVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
-            reportVC.selectedDate = self.selectedDate
+           // reportVC.selectedDate = self.selectedDate
             self.navigationController?.pushViewController(reportVC, animated: false)
         }
         else
@@ -856,6 +998,7 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                         }
                         
                         self.dictItems.remove(at: indexes)
+                        CommonUtility.shared.showErrorAlertOnWindow("Success", message: "Order successfully Submitted.")
                     }
                     else
                     {
@@ -903,8 +1046,42 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
         //print("sub cat count is \(self.arItemList[section].SubCatItems.count)")
         btn.setTitleColor(UIColor.ColorCodes.dinningTblHeaderColor, for: .normal)
         //btn.addTarget(self, action: #selector(redirectToItemSelectionVC), for: .touchUpInside)
-        btn.tag = section
-        vw.addSubview(btn)
+        //btn.tag = section
+                
+        var spacing = 2
+        let btn2 = UIButton(type: .custom)
+        btn2.titleLabel?.font = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica", size: 20.0) : UIFont(name: "Helvetica", size: 15.0)
+        
+        if(self.currentSelectedIndex == 1 && self.arItemList[section].CatName.uppercased() == "LUNCH ENTREE")
+        {
+            btn2.setTitle("(\("servedWithSoup".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)))", for: .normal)
+        }
+        else if(self.currentSelectedIndex == 2 && self.arItemList[section].CatName.uppercased() == "DINNER ENTREE")
+        {
+            btn2.setTitle("(\("servedWithDessert".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)))", for: .normal)
+        }
+        else
+        {
+            spacing = 0
+            btn2.setTitle("", for: .normal)
+            btn2.isHidden = true
+        }
+        btn2.setTitleColor(UIColor.ColorCodes.dinningTblHeaderColor, for: .normal)
+        
+        let stackView = UIStackView(arrangedSubviews: [btn, btn2])
+                stackView.axis = .horizontal
+                stackView.spacing = CGFloat(spacing)
+                stackView.alignment = .center
+                stackView.distribution = .fill
+                stackView.translatesAutoresizingMaskIntoConstraints = false
+        vw.addSubview(stackView)
+                
+                NSLayoutConstraint.activate([
+                    stackView.centerXAnchor.constraint(equalTo: vw.centerXAnchor),
+                    stackView.centerYAnchor.constraint(equalTo: vw.centerYAnchor)
+                ])
+        
+        //vw.addSubview(btn)
         
         return vw
     }
@@ -949,7 +1126,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
 
                     self.dictItems.removeAll()
 
-                    if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+                    //AppDelegate.sharedDelegate().UserRole == "kitchen"
+                    if(self.IsForkitchenSummary == true)
                     {
 
                     }
@@ -1051,6 +1229,8 @@ class GuestOrderVC: UIViewController, UITableViewDelegate, UITableViewDataSource
                     
                     self.Occupancy = response.result["occupancy"].intValue
                     self.lbl_quantity.text = "\(self.Occupancy)"
+                    self.btn_minus.setTitleColor(UIColor.lightGray, for: .normal)
+                    self.btn_plus.setTitleColor(UIColor.lightGray, for: .normal)
                     if(self.Occupancy > 0)
                     {
                         self.btn_minus.setTitleColor(UIColor.black, for: .normal)

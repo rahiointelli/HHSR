@@ -12,6 +12,10 @@ import SpreadsheetView
 class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCalendarDelegateAppearance, SpreadsheetViewDataSource
 {
 
+    @IBOutlet var dtPicker : UIDatePicker!
+    @IBOutlet weak var vw_clearBG: UIView!
+    @IBOutlet weak var vw_header: UIView!
+    @IBOutlet var vw_DatePickerContainer: UIView!
     @IBOutlet weak var lblRoomName : UILabel!
     @IBOutlet weak var calendar: FSCalendar!
     @IBOutlet weak var lblSelectedDate: UILabel!
@@ -30,6 +34,11 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     @IBOutlet weak var spreadsheetView: SpreadsheetView!
     @IBOutlet weak var btnToday: UIButton!
     @IBOutlet weak var lblNoReport: UILabel!
+    
+    @IBOutlet weak var btnSngDate: UIButton!
+    @IBOutlet weak var btnMltDate: UIButton!
+    @IBOutlet weak var btnStDate: UIButton!
+    @IBOutlet weak var btnEndDate: UIButton!
         
     var selectedRoomName : String = ""
     var selectedRoomID : Int = 0
@@ -37,23 +46,37 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     let CYear = Calendar.current.component(.year, from: Date())
     var formatter = DateFormatter()
     var arItemList : [clsReport] = []
-    var arrBreakfastItems : [clsReport] = []
-    var arrLunchItems : [clsReport] = []
-    var arrDinnerItems : [clsReport] = []
+//    var arrBreakfastItems : [clsReport] = []
+//    var arrLunchItems : [clsReport] = []
+//    var arrDinnerItems : [clsReport] = []
     var arrBrkItemTitle : [clsItemWithCount] = []
     var arrLunchItemTitle : [clsItemWithCount] = []
     var arrDinnerItemTitle : [clsItemWithCount] = []
     var currentSelectedIndex =    0
     var lastMenuDate : Date = Date()
     var arRoomList : [clsReportRoom] = []
+    var TotalQuantity : [String:Any] = [:]
+    var brkColumnCount = 0
+    var lunchColumnCount = 0
+    var dinnerColumnCount = 0
+    var currentSelectedDatePrefIndex = 0
+    let dtpickerWidth : CGFloat = ((UIDevice.current.userInterfaceIdiom == .pad) ? 480 : 320)
+    var CurrentDateSelection = "start"
+    var StDate = Date()
+    var EndDate = Date()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        if #available(iOS 13.0, *) {
+            self.dtPicker.overrideUserInterfaceStyle = .light
+        }
+        
         if(Calendar.current.isDate(self.lastMenuDate, inSameDayAs:self.selectedDate))
         {}
-        else if (self.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
-        {            
+        else if (self.lastMenuDate.compare(self.selectedDate) == ComparisonResult.orderedAscending)//Date()
+        {
+            self.selectedDate = self.lastMenuDate
             self.btnToday.isHidden = true
         }
         
@@ -89,6 +112,18 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
         self.btnBrk.setTitle("brk".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode), for: .normal)
         self.btnLunch.setTitle("lunch".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode), for: .normal)
         self.btnDinner.setTitle("dnr".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode), for: .normal)
+        
+        let frame1 = CGRect(x: 0, y: 38.5, width: (UIScreen.main.bounds.size.width+1)/2, height: 1.5)
+        let sngDateBottom = UIView(frame: frame1)
+        sngDateBottom.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory
+        sngDateBottom.tag = 1111
+        let mltDateBottom = UIView(frame: frame1)
+        mltDateBottom.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory
+        mltDateBottom.tag = 1111
+        self.btnSngDate.addSubview(sngDateBottom)
+        self.btnMltDate.addSubview(mltDateBottom)
+        
+        self.setUpDatewiseUI(selectedIndex: 0)
                        
         if(UIDevice.current.userInterfaceIdiom == .pad)
         {
@@ -144,6 +179,96 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
         let cl_mnth = mnth.localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
         self.btn_calendarMonth.setTitle(cl_mnth, for: .normal)
         self.setSelectedDateLabel()
+        self.CallReportListService()
+    }
+    
+    @IBAction func btnStDateClicked(_ sender: Any)
+    {
+        self.view.endEditing(true)
+        self.vw_clearBG.isHidden = false
+        self.vw_header.isUserInteractionEnabled = false
+        let wd = UIScreen.main.bounds.size.width
+        self.dtPicker.maximumDate = self.EndDate
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/dd/yyyy"
+        dateFormatter.locale = self.dtPicker.locale
+        self.dtPicker.minimumDate = dateFormatter.date(from: "01/01/2000")!
+        
+        self.vw_DatePickerContainer.frame = CGRect(x: (wd - dtpickerWidth)/2, y: ((UIScreen.main.bounds.size.height - self.vw_DatePickerContainer.frame.size.height)/2), width: dtpickerWidth, height: self.vw_DatePickerContainer.frame.size.height)
+   
+        self.view.addSubview(self.vw_DatePickerContainer)
+                
+        //"dd MMM YYYY hh:mm a"
+        // HH:mm:ss z
+        let date = dateFormatter.date(from: self.btnStDate.title(for: .normal)!)
+        dateFormatter.dateFormat =  "yyyy-MM-dd"
+        let yourDate = dateFormatter.string(from: date!)
+        print(yourDate)
+        self.dtPicker.date = dateFormatter.date(from: yourDate)!
+        self.CurrentDateSelection = "start"
+    }
+    
+    @IBAction func btnEndDateClicked(_ sender: Any)
+    {
+                
+        self.view.endEditing(true)
+        self.vw_clearBG.isHidden = false
+        self.vw_header.isUserInteractionEnabled = false
+        let wd = UIScreen.main.bounds.size.width
+        
+        self.dtPicker.minimumDate = self.StDate
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/dd/yyyy"
+        dateFormatter.locale = self.dtPicker.locale
+        self.dtPicker.maximumDate = dateFormatter.date(from: "12/31/2050")!
+        
+        self.vw_DatePickerContainer.frame = CGRect(x: (wd - dtpickerWidth)/2, y: ((UIScreen.main.bounds.size.height - self.vw_DatePickerContainer.frame.size.height)/2), width: dtpickerWidth, height: self.vw_DatePickerContainer.frame.size.height)
+   
+        self.view.addSubview(self.vw_DatePickerContainer)
+
+        //"dd MMM YYYY hh:mm a"
+        // HH:mm:ss z
+        let date = dateFormatter.date(from: self.btnEndDate.title(for: .normal)!)
+        dateFormatter.dateFormat =  "yyyy-MM-dd"
+        let yourDate = dateFormatter.string(from: date!)
+        print(yourDate)
+        self.dtPicker.date = dateFormatter.date(from: yourDate)!
+        self.CurrentDateSelection = "end"
+    }
+    
+    @IBAction func btnCancelDateClicked(_ sender: Any)
+    {
+        self.vw_clearBG.isHidden = true
+        self.vw_header.isUserInteractionEnabled = true
+        self.vw_DatePickerContainer.removeFromSuperview()
+    }
+    
+    @IBAction func btnAddDateClicked(_ sender: Any)
+    {
+        self.vw_clearBG.isHidden = true
+        self.vw_header.isUserInteractionEnabled = true
+        self.vw_DatePickerContainer.removeFromSuperview()
+                
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        let myString = formatter.string(from: self.dtPicker.date)
+        let yourDate = formatter.date(from: myString)
+        formatter.dateFormat = "MM/dd/yyyy"
+        let selectedDate = formatter.string(from: yourDate!)
+        
+        if(self.CurrentDateSelection == "start")
+        {
+            self.StDate = self.dtPicker.date
+            self.btnStDate.setTitle(selectedDate, for: .normal)
+        }
+        else
+        {
+            self.EndDate = self.dtPicker.date
+            self.btnEndDate.setTitle(selectedDate, for: .normal)
+        }
+        
+        self.setDateRangeTitle()
         self.CallReportListService()
     }
       
@@ -248,12 +373,12 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     }
 
     func maximumDate(for calendar: FSCalendar) -> Date {
-//        formatter.dateFormat = "yyyy MM dd"
-//        let endDate = Calendar.current.date(byAdding: .month, value: 2, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
-//        let range = Calendar.current.range(of: .day, in: .month, for: endDate)!
-//        let edDate = formatter.date(from: "\(endDate.toString(dateFormat: "yyyy MM")) \(range.count)")
-//        return edDate!
-        return self.lastMenuDate
+        formatter.dateFormat = "yyyy MM dd"
+        let endDate = Calendar.current.date(byAdding: .month, value: 2, to: formatter.date(from: Date().toString(dateFormat: "yyyy MM dd"))!)!
+        let range = Calendar.current.range(of: .day, in: .month, for: endDate)!
+        let edDate = formatter.date(from: "\(endDate.toString(dateFormat: "yyyy MM")) \(range.count)")
+        return edDate!
+       // return self.lastMenuDate
     }
     
     func calendar(_ calendar: FSCalendar, appearance: FSCalendarAppearance, fillSelectionColorFor date: Date) -> UIColor? {
@@ -330,7 +455,7 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
-            self.arItemList = self.arrBreakfastItems
+            //self.arItemList = self.arrBreakfastItems
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory } })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
@@ -343,7 +468,7 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
-            self.arItemList = self.arrLunchItems
+            //self.arItemList = self.arrLunchItems
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
@@ -357,7 +482,7 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
-            self.arItemList = self.arrDinnerItems
+            //self.arItemList = self.arrDinnerItems
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
@@ -367,10 +492,92 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
         self.spreadsheetView.reloadData()
     }
     
+    func setUpDatewiseUI(selectedIndex : Int)
+    {
+        self.currentSelectedDatePrefIndex = selectedIndex
+        if(selectedIndex == 0)
+        {
+            self.selectedDate = Date()
+            self.calendar_container_height.constant = 78
+            self.btnToday.isHidden = false
+            self.btn_calendarMonth.isHidden = false
+            self.btnStDate.isHidden = true
+            self.btnEndDate.isHidden = true
+            
+            self.btnSngDate.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
+            self.btnMltDate.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
+                       
+            self.btnSngDate.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory } })
+            self.btnMltDate.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
+            
+            if(Calendar.current.isDate(self.lastMenuDate, inSameDayAs:self.selectedDate))
+            {}
+            else if (self.lastMenuDate.compare(self.selectedDate) == ComparisonResult.orderedAscending)
+            {
+                self.selectedDate = self.lastMenuDate
+                self.btnToday.isHidden = true
+            }
+            
+            self.calendar.select(self.selectedDate, scrollToDate: true)
+            self.full_calendar.select(self.selectedDate, scrollToDate: true)
+            self.compareSelectedDate()
+            self.setSelectedDateLabel()
+        }
+        else
+        {
+            self.calendar_container_height.constant = 0
+            self.btnToday.isHidden = true
+            self.btn_calendarMonth.isHidden = true
+            self.btnStDate.isHidden = false
+            self.btnEndDate.isHidden = false
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MM/dd/yyyy"
+            self.StDate = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date()))!
+            
+            self.btnStDate.setTitle("\(dateFormatter.string(from: self.StDate))", for: .normal)
+            self.btnEndDate.setTitle("\(dateFormatter.string(from: self.EndDate))", for: .normal)
+         
+            self.setDateRangeTitle()
+            
+            self.btnSngDate.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
+            self.btnMltDate.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
+            
+            self.btnSngDate.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory } })
+            self.btnMltDate.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
+        }
+        
+        self.CallReportListService()
+       // self.spreadsheetView.reloadData()
+    }
+    
+    func setDateRangeTitle()
+    {
+        let st_mnth = self.StDate.toString(dateFormat: "MMM")
+        let st_cl_mnth = st_mnth.localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
+        let stDateStr = "\(st_cl_mnth) \(self.StDate.toString(dateFormat: "d, yyyy"))"
+        
+        let end_mnth = self.EndDate.toString(dateFormat: "MMM")
+        let end_cl_mnth = end_mnth.localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
+        let EndDateStr = "\(end_cl_mnth) \(self.EndDate.toString(dateFormat: "d, yyyy"))"
+
+                    
+        self.lblSelectedDate.text = "\(stDateStr) to \(EndDateStr)"
+    }
+    
     @IBAction func btnMeal_Clicked(_ sender: Any)
     {
         let btn = sender as! UIButton
         self.setUpMealCategoryArray(selectedIndex: btn.tag)
+    }
+    
+    @IBAction func btnDate_Clicked(_ sender: Any)
+    {
+        if(self.full_calendar.isHidden == true)
+        {
+            let btn = sender as! UIButton
+            self.setUpDatewiseUI(selectedIndex: btn.tag)
+        }
     }
     
     func frozenColumns(in spreadsheetView: SpreadsheetView) -> Int {
@@ -378,7 +585,7 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     }
 
     func frozenRows(in spreadsheetView: SpreadsheetView) -> Int {
-        return 1
+        return 2
     }
     
     func numberOfColumns(in spreadsheetView: SpreadsheetView) -> Int {
@@ -448,8 +655,11 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
                        
             let attributedString = NSMutableAttributedString.init(string: self.arRoomList[indexPath.row - 2].RoomName)
             // Add Underline Style Attribute.
-            attributedString.addAttribute(NSAttributedString.Key.underlineStyle, value: 1, range:
-                NSRange.init(location: 0, length: attributedString.length));
+            if(self.currentSelectedDatePrefIndex == 0)
+            {
+                attributedString.addAttribute(NSAttributedString.Key.underlineStyle, value: 1, range:
+                                                NSRange.init(location: 0, length: attributedString.length));
+            }
             cell.label.attributedText = attributedString
             cell.label.isUserInteractionEnabled = true
             cell.label.tag = indexPath.row
@@ -457,7 +667,14 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.tapRecognized(_:)))
             cell.label.addGestureRecognizer(tapGesture)
             
-            cell.label.textColor = (self.arRoomList[indexPath.row - 2].HasSpecialInst == 0) ? UIColor.black : UIColor.ColorCodes.homeSelectedCategory
+            if(self.arRoomList[indexPath.row - 2].isForGuest == 1)
+            {
+                cell.label.textColor = UIColor.black
+            }
+            else
+            {
+                cell.label.textColor = (self.arRoomList[indexPath.row - 2].HasSpecialInst == 0) ? UIColor.black : UIColor.ColorCodes.homeSelectedCategory
+            }
             cell.gridlines.bottom = .solid(width: 1, color: .lightGray)
             cell.gridlines.right = .solid(width: 1, color: .white)
             return cell
@@ -487,15 +704,21 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             let cell = spreadsheetView.dequeueReusableCell(withReuseIdentifier: String(describing: ItemTotalCountCell.self), for: indexPath) as! ItemTotalCountCell
             if(self.currentSelectedIndex == 0)
             {
-                cell.label.text = "\(self.arrBrkItemTitle[indexPath.column - 1].TotalCount)"
+                let ky = self.arrBrkItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.TotalQuantity[ky] as! Int)"
+                //cell.label.text = "\(self.arrBrkItemTitle[indexPath.column - 1].TotalCount)"
             }
             else if(self.currentSelectedIndex == 1)
             {
-                cell.label.text = "\(self.arrLunchItemTitle[indexPath.column - 1].TotalCount)"
+                let ky = self.arrLunchItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.TotalQuantity[ky] as! Int)"
+                //cell.label.text = "\(self.arrLunchItemTitle[indexPath.column - 1].TotalCount)"
             }
             else
             {
-                cell.label.text = "\(self.arrDinnerItemTitle[indexPath.column - 1].TotalCount)"
+                let ky = self.arrDinnerItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.TotalQuantity[ky] as! Int)"
+                //cell.label.text = "\(self.arrDinnerItemTitle[indexPath.column - 1].TotalCount)"
             }
             cell.gridlines.bottom = .solid(width: 1, color: .lightGray)
             cell.gridlines.right = .solid(width: 1, color: .white)
@@ -506,15 +729,18 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
             let cell = spreadsheetView.dequeueReusableCell(withReuseIdentifier: String(describing: ItemQuantityCell.self), for: indexPath) as! ItemQuantityCell
             if(self.currentSelectedIndex == 0)
             {
-                cell.label.text = "\(self.arrBreakfastItems[indexPath.row - 2].Quantity[indexPath.column - 1])"
+                let ky = self.arrBrkItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.arItemList[indexPath.row - 2].Quantity[ky] as! Int)"
             }
             else if(self.currentSelectedIndex == 1)
             {
-                cell.label.text = "\(self.arrLunchItems[indexPath.row - 2].Quantity[indexPath.column - 1])"
+                let ky = self.arrLunchItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.arItemList[indexPath.row - 2].Quantity[ky] as! Int)"
             }
             else
             {
-                cell.label.text = "\(self.arrDinnerItems[indexPath.row - 2].Quantity[indexPath.column - 1])"
+                let ky = self.arrDinnerItemTitle[indexPath.column - 1].ItemName!
+                cell.label.text = "\(self.arItemList[indexPath.row - 2].Quantity[ky] as! Int)"
             }
             
             cell.gridlines.bottom = .solid(width: 1, color: .lightGray)
@@ -526,35 +752,38 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     
     @objc func tapRecognized(_ sender: UITapGestureRecognizer)
     {
-        let lbl = sender.view as! UILabel
-       // print("Room clicked \(lbl.tag)")
-        var isRedirect = false
-        if(self.currentSelectedIndex == 0 && self.arRoomList[lbl.tag - 2].HasBrkOrder == 1)
+        if(self.currentSelectedDatePrefIndex == 0)
         {
-            isRedirect = true
-        }
-        else if(self.currentSelectedIndex == 1 && self.arRoomList[lbl.tag - 2].HasLunchOrder == 1)
-        {
-            isRedirect = true
-        }
-        else if(self.currentSelectedIndex == 2 && self.arRoomList[lbl.tag - 2].HasDinnerOrder == 1)
-        {
-            isRedirect = true
-        }
-        
-        if(isRedirect)
-        {
-            let printVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "PrintVC") as! PrintVC
-            printVC.selectedRoomID = self.arRoomList[lbl.tag - 2].RoomId
-            printVC.selectedRoomName = self.arRoomList[lbl.tag - 2].RoomName
-            printVC.selectedDate = self.selectedDate
-            printVC.currentSelectedIndex = self.currentSelectedIndex
-            printVC.isForGuest = self.arRoomList[lbl.tag - 2].isForGuest
-            self.navigationController?.pushViewController(printVC, animated: false)
-        }
-        else
-        {
-            self.showMessageAlert(message: "Order not placed.")
+            let lbl = sender.view as! UILabel
+            // print("Room clicked \(lbl.tag)")
+            var isRedirect = false
+            if(self.currentSelectedIndex == 0 && self.arRoomList[lbl.tag - 2].HasBrkOrder == 1)
+            {
+                isRedirect = true
+            }
+            else if(self.currentSelectedIndex == 1 && self.arRoomList[lbl.tag - 2].HasLunchOrder == 1)
+            {
+                isRedirect = true
+            }
+            else if(self.currentSelectedIndex == 2 && self.arRoomList[lbl.tag - 2].HasDinnerOrder == 1)
+            {
+                isRedirect = true
+            }
+            
+            if(isRedirect)
+            {
+                let printVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "PrintVC") as! PrintVC
+                printVC.selectedRoomID = self.arRoomList[lbl.tag - 2].RoomId
+                printVC.selectedRoomName = self.arRoomList[lbl.tag - 2].RoomName
+                printVC.selectedDate = self.selectedDate
+                printVC.currentSelectedIndex = self.currentSelectedIndex
+                printVC.isForGuest = self.arRoomList[lbl.tag - 2].isForGuest
+                self.navigationController?.pushViewController(printVC, animated: false)
+            }
+            else
+            {
+                self.showMessageAlert(message: "Order not placed.")
+            }
         }
     }
     
@@ -563,33 +792,110 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
         self.view.isUserInteractionEnabled = false
         self.act_indicator.startAnimating()
 //API.order_list_api
-        //"get-categorywise-data"
-        NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + "get-report-data", parameters: ["room_id" : "101", "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "type" : self.currentSelectedIndex + 1]) { (response) in
+        //"get-categorywise-data" //get-report-data
+        
+        var para = [:] as [String : AnyObject]
+        if(self.currentSelectedDatePrefIndex == 0)
+        {
+            para["search_date"] = self.selectedDate.toString(dateFormat: "yyyy-MM-dd") as AnyObject
+        }
+        else
+        {
+            para["start_date"] = self.StDate.toString(dateFormat: "yyyy-MM-dd") as AnyObject
+            para["end_date"] = self.EndDate.toString(dateFormat: "yyyy-MM-dd") as AnyObject
+        }
+        
+        //["room_id" : "101", "search_date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "type" : self.currentSelectedIndex + 1]
+        NetworkUtilities.shared.makeGETRequest(with: API.baseURL + "reports", parameters: para) { (response) in
+            
+            self.view.isUserInteractionEnabled = true
+            self.act_indicator.stopAnimating()
             if(response.error == nil)
             {
-                self.view.isUserInteractionEnabled = true
-                self.act_indicator.stopAnimating()
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
-                    print(response.result)              
+                    if(response.result["columns"].count > 0 && response.result["columns"][0].count >= 4)
+                    {
+                        let allMealCount = response.result["columns"][0]
+                        self.brkColumnCount = allMealCount[1]["colspan"].intValue
+                        self.lunchColumnCount = allMealCount[2]["colspan"].intValue
+                        self.dinnerColumnCount = allMealCount[3]["colspan"].intValue
+                        self.TotalQuantity = response.result["total"].dictionaryObject!
+                    }
+                
+                    self.arItemList.removeAll()
+                    self.arrBrkItemTitle.removeAll()
+                    self.arrLunchItemTitle.removeAll()
+                    self.arrDinnerItemTitle.removeAll()
+                    self.arRoomList.removeAll()
+                
+                    let allTitle = response.result["columns"][2]
+                    for i in 0..<allTitle.count
+                    {
+                        if(i<self.brkColumnCount)
+                        {
+                            self.arrBrkItemTitle.append(clsItemWithCount(iName: allTitle[i]["title"].rawString()!, iRealName: allTitle[i]["tooltip"].rawString()!))
+                        }
+                        else if(i<self.brkColumnCount + self.lunchColumnCount)
+                        {
+                            self.arrLunchItemTitle.append(clsItemWithCount(iName: allTitle[i]["title"].rawString()!, iRealName: allTitle[i]["tooltip"].rawString()!))
+                        }
+                        else
+                        {
+                            self.arrDinnerItemTitle.append(clsItemWithCount(iName: allTitle[i]["title"].rawString()!, iRealName: allTitle[i]["tooltip"].rawString()!))
+                        }
+                    }
                     
-                    self.arrBreakfastItems.removeAll()
-                    self.arrLunchItems.removeAll()
-                    self.arrDinnerItems.removeAll()
-                    
-                    self.arrBrkItemTitle = (response.result["breakfast_item_list"].arrayValue.compactMap(clsItemWithCount.init))
-                    self.arrLunchItemTitle = (response.result["lunch_item_list"].arrayValue.compactMap(clsItemWithCount.init))
-                    self.arrDinnerItemTitle = (response.result["dinner_item_list"].arrayValue.compactMap(clsItemWithCount.init))
-                    
-                    self.arrBreakfastItems = (response.result["report_breakfast_list"].arrayValue.compactMap(clsReport.init))
-                    
-                    //.forEach({self.arrBreakfastItems.append(contentsOf: $0.CatItems.filter({ $0.ItemType == "item" || $0.ItemType == "sub_cat_item" })) })
-                    
-                    self.arrLunchItems = (response.result["report_lunch_list"].arrayValue.compactMap(clsReport.init))
-                    
-                    self.arrDinnerItems =  (response.result["report_dinner_list"].arrayValue.compactMap(clsReport.init))
-                    
-                    self.arRoomList = (response.result["rooms_list"].arrayValue.compactMap(clsReportRoom.init))
+                    let RoomArray = response.result["result"]["rows"]
+                    RoomArray.forEach({
+                        let rName = (($0.1)["room_name"]).rawString()!
+                        let rId = (($0.1)["room_id"]).rawString()!
+                        let hasSplInst =  (($0.1)["has_special_ins"]).rawString()!
+                        
+                        if(self.currentSelectedDatePrefIndex == 0)
+                        {
+                            let hasBrkOrder =  (($0.1)["has_breakfast_order"]).rawString()!
+                            let hasLunchOrder =  (($0.1)["has_lunch_order"]).rawString()!
+                            let hasDinnerOrder =  (($0.1)["has_dinner_order"]).rawString()!
+                            let hasSplInst =  (($0.1)["has_special_ins"]).rawString()!
+                            let isForGuest =  (($0.1)["is_for_guest"]).rawString()!
+                            self.arRoomList.append(clsReportRoom(RName: rName, RId: Int(rId)!, HasSplInst: Int(hasSplInst)!, HasBrkOrder: Int(hasBrkOrder)!, HasLunchOrder: Int(hasLunchOrder)!, HasDinnerOrder: Int(hasDinnerOrder)!, IsForGuest: Int(isForGuest)!))
+                        }
+                        else
+                        {
+                            self.arRoomList.append(clsReportRoom(RName: rName, RId: Int(rId)!, HasSplInst: Int(hasSplInst)!))
+                        }
+                        
+                        self.arItemList.append(clsReport(RName: rName))
+                        //print("for each obj rawdict is \(($0.1).dictionaryObject!)")
+                        self.arItemList[self.arItemList.count - 1].Quantity = ($0.1).dictionaryObject!
+    //                    self.arrLunchItems.append(clsReport(RName: rName))
+    //                    self.arrLunchItems[self.arrLunchItems.count - 1].Quantity = ($0.1).dictionaryObject!
+    //                    self.arrDinnerItems.append(clsReport(RName: rName))
+    //                    self.arrDinnerItems[self.arrDinnerItems.count - 1].Quantity = ($0.1).dictionaryObject!
+                        //= (response.result["rooms_list"].arrayValue.compactMap(clsReportRoom.init))
+                    })
+                
+                    print("api changes result is \(self.arrBrkItemTitle)")
+//response.result["total"].dictionaryValue.keys)")
+                
+//                    self.arrBreakfastItems.removeAll()
+//                    self.arrLunchItems.removeAll()
+//                    self.arrDinnerItems.removeAll()
+//                    
+//                    self.arrBrkItemTitle = (response.result["breakfast_item_list"].arrayValue.compactMap(clsItemWithCount.init))
+//                    self.arrLunchItemTitle = (response.result["lunch_item_list"].arrayValue.compactMap(clsItemWithCount.init))
+//                    self.arrDinnerItemTitle = (response.result["dinner_item_list"].arrayValue.compactMap(clsItemWithCount.init))
+//                    
+//                    self.arrBreakfastItems = (response.result["report_breakfast_list"].arrayValue.compactMap(clsReport.init))
+//                    
+//                    //.forEach({self.arrBreakfastItems.append(contentsOf: $0.CatItems.filter({ $0.ItemType == "item" || $0.ItemType == "sub_cat_item" })) })
+//                    
+//                    self.arrLunchItems = (response.result["report_lunch_list"].arrayValue.compactMap(clsReport.init))
+//                    
+//                    self.arrDinnerItems =  (response.result["report_dinner_list"].arrayValue.compactMap(clsReport.init))
+//                    
+//                    self.arRoomList = (response.result["rooms_list"].arrayValue.compactMap(clsReportRoom.init))
                     
                     self.setUpMealCategoryArray(selectedIndex: self.currentSelectedIndex)
 
@@ -610,14 +916,14 @@ class ReportVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCa
     {
         let reportVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ReportChargesVC") as! ReportChargesVC
         reportVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
-        if (reportVC.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
-        {
-            reportVC.selectedDate = reportVC.lastMenuDate
-        }
-        else
-        {
-            reportVC.selectedDate = Date()
-        }
+//        if (reportVC.lastMenuDate.compare(Date()) == ComparisonResult.orderedAscending)
+//        {
+//            reportVC.selectedDate = reportVC.lastMenuDate
+//        }
+//        else
+//        {
+//            reportVC.selectedDate = Date()
+//        }
         self.navigationController?.pushViewController(reportVC, animated: false)
     }
     

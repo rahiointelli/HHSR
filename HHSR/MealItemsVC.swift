@@ -10,7 +10,7 @@ import FSCalendar
 import SDWebImage
 import SwiftyJSON
 
-class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCalendarDelegateAppearance, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, HeplerDelegate {
+class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, FSCalendarDelegateAppearance, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, HeplerDelegate, UIGestureRecognizerDelegate, HeplerDelegateWithImg {
 
     @IBOutlet weak var lblRoomName : UILabel!
     @IBOutlet weak var calendar: FSCalendar!
@@ -43,14 +43,19 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     @IBOutlet weak var imgGallery: UIImageView!
     @IBOutlet weak var btnTray: UIButton!
     @IBOutlet weak var btnEscort: UIButton!
+    @IBOutlet weak var btnTakeout: UIButton!
     @IBOutlet weak var vw_tray: UIView!
     @IBOutlet weak var vw_escort: UIView!
+    @IBOutlet weak var vw_takeout: UIView!
     @IBOutlet weak var lblTraySrvTitle: UILabel!
     @IBOutlet weak var lblEscrtSrvTitle: UILabel!
+    @IBOutlet weak var lblTakeoutSrvTitle: UILabel!
     @IBOutlet weak var cns_stkSrvVwHight: NSLayoutConstraint!
     @IBOutlet weak var cns_chkSrvBoxWidth: NSLayoutConstraint!
     @IBOutlet weak var cns_stkViewTop: NSLayoutConstraint!
     @IBOutlet weak var cns_stkViewBottom: NSLayoutConstraint!
+    @IBOutlet weak var btn_editRoom: UIButton!
+    @IBOutlet weak var btn_back: UIButton!
         
     var selectedRoomName : String = ""
     var selectedRoomID : Int = 0
@@ -74,7 +79,11 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
     var IsEscortForBrk = 0
     var IsEscortForLunch = 0
     var IsEscortForDinner = 0
+    var IsTakeoutForBrk = 0
+    var IsTakeoutForLunch = 0
+    var IsTakeoutForDinner = 0
     var IsOrderSubmitted = false
+    var IsForkitchenSummary = false
     
     func heightChanged() {
         
@@ -87,6 +96,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         self.lblGuideline.textColor = UIColor.ColorCodes.homeSelectedCategory
         self.btnTray.setImage(UIImage(named: "chk_checked.png"), for: [.disabled, .selected])
         self.btnEscort.setImage(UIImage(named: "chk_checked.png"), for: [.disabled, .selected])
+        self.btnTakeout.setImage(UIImage(named: "chk_checked.png"), for: [.disabled, .selected])
         
         if(self.selectedRoomName.lowercased() == "headoffice")
         {
@@ -95,14 +105,25 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             self.btnGuest.isHidden = true
         }
         
-        if(AppDelegate.sharedDelegate().UserRole == "superadmin" || AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "concierge" || AppDelegate.sharedDelegate().UserRole == "nurse")
-        {
-            self.cns_btnBackWidth.constant = 22
-            self.cns_btnBackRight.constant = 13
-        }
-        else if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        if(self.IsForkitchenSummary == true) //else if
         {
             self.btnGuest.isHidden = true
+            self.btn_editRoom.isHidden = true
+        }
+        
+        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        {
+            self.btn_editRoom.isHidden = true
+        }
+        
+        if(AppDelegate.sharedDelegate().UserRole == "superadmin" || AppDelegate.sharedDelegate().UserRole == "admin" || AppDelegate.sharedDelegate().UserRole == "concierge" || AppDelegate.sharedDelegate().UserRole == "nurse" || AppDelegate.sharedDelegate().UserRole == "kitchen")
+        {
+            self.btn_back.isHidden = false
+            self.cns_btnBackWidth.constant = 32
+            self.cns_btnBackRight.constant = 8//13
+        }
+        else
+        {
         }
         
         print("last menu date is \(self.lastMenuDate) and selected date is \(self.selectedDate)")
@@ -116,11 +137,12 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         }
         
         self.btnToday.setTitle("today".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode), for: .normal)
-        
-        let img = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? UIImage(named: "btn_report") : ((AppDelegate.sharedDelegate().LanguagePref == 0) ? UIImage(named: "btn_submit") : UIImage(named: "btn_submit_cn"))
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        let img = (self.IsForkitchenSummary == true) ? UIImage(named: "btn_report") : ((AppDelegate.sharedDelegate().LanguagePref == 0) ? UIImage(named: "btn_submit") : UIImage(named: "btn_submit_cn"))
         self.btnSubmit.setBackgroundImage(img, for: .normal)
                     
-        self.lblRoomName.text = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? "Kitchen" : "# \(self.selectedRoomName)"
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        self.lblRoomName.text = (self.IsForkitchenSummary == true) ? "Kitchen Summary" : "# \(self.selectedRoomName)"
         //self.btnDoubleOccupancy.isHidden = (self.Occupancy == 2) ? false : true
         // Do any additional setup after loading the view.
         
@@ -143,6 +165,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         self.btnDinner.setTitle("dnr".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode), for: .normal)
         self.lblTraySrvTitle.text = "trayService".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
         self.lblEscrtSrvTitle.text = "escortService".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
+        self.lblTakeoutSrvTitle.text = "takeoutService".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)
                
         if(UIDevice.current.userInterfaceIdiom == .pad)
         {
@@ -252,7 +275,6 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             {
                 cDate = MidDtOfWeek
             }
-            
         }
         
         let yr = Calendar.current.component(.year, from: cDate)
@@ -453,7 +475,8 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             cell.lbltext.text = (AppDelegate.sharedDelegate().LanguagePref == 0) ? (menuItems[indexPath.row]).ItemName! : ((tl.count == 0) ? (menuItems[indexPath.row]).ItemName! : tl)
             return cell
         }
-        else if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem || menuItems[indexPath.row].ItemImage.count == 0)
+        //else if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem || menuItems[indexPath.row].ItemImage.count == 0)
+        else if(menuItems[indexPath.row].ItemImage.count == 0)
         {
             let cell = tableView.dequeueReusableCell(withIdentifier: "TblSubItemListCell", for: indexPath) as! TblSubItemListCell
             cell.selectionStyle = .none
@@ -499,8 +522,6 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 cell.cns_TitleTop.constant = 10
                 cell.cns_TitleBottom.constant = 10
                 cell.cns_vwSeperateor_height.constant = 0
-                
-                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
             }
             else
             {
@@ -515,10 +536,8 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 {
                     cell.cns_vwSeperateor_height.constant = 1
                 }
-                
-                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
-                cell.helperDelegate = self
             }
+            cell.cl_cell_width = (UIScreen.main.bounds.size.width - (cell.cns_labelLeading.constant-10))/2
                        
             cell.lbl_quantity.text = "\(menuItems[indexPath.row].ItemQuantity!)"
             cell.btn_plus.tag = (indexPath.section * 1000) + indexPath.row
@@ -526,11 +545,20 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             cell.btn_plus.addTarget(self, action: #selector(AddQuantity), for: .touchUpInside)
             cell.btn_minus.addTarget(self, action: #selector(MinusQuantity), for: .touchUpInside)
             
-            if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            if(self.IsForkitchenSummary == true)
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() +  0.05) {
                     cell.lbl_quantity.font = UIFont(name: "Helvetica-Bold", size: ((UIDevice.current.userInterfaceIdiom == .pad) ? 28.0 : 22.0))
+                    cell.btn_plus.isHidden = true
+                    cell.btn_minus.isHidden = true
+                    cell.vw_container.backgroundColor = .clear
                 }
+            }
+            else
+            {
+                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
+                cell.helperDelegate = self
             }
 
             return cell
@@ -542,16 +570,20 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             
             let tl = (menuItems[indexPath.row]).ChineseName!
                                     
-            if(indexPath.row == menuItems.count - 1)
-            {
-                cell.cns_vwSeperateor_height.constant = 0
-            }
-            else
-            {
-                cell.cns_vwSeperateor_height.constant = 1
-            }
+//            if(indexPath.row == menuItems.count - 1)
+//            {
+//                cell.cns_vwSeperateor_height.constant = 0
+//            }
+//            else
+//            {
+//                cell.cns_vwSeperateor_height.constant = 1
+//            }
+            
+            //cell.addGestureRecognizer(longPressGesture)
+            cell.tag = (indexPath.section * 1000) + indexPath.row
             
             cell.lblItemName.text = (AppDelegate.sharedDelegate().LanguagePref == 0) ? (menuItems[indexPath.row]).ItemName! : ((tl.count == 0) ? (menuItems[indexPath.row]).ItemName! : tl)
+            
             if(menuItems[indexPath.row].ItemImage.count > 0)
             {
                 let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.imgClicked(_:)))
@@ -561,6 +593,8 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 cell.imgItemImage.sd_setImage(with: URL(string: menuItems[indexPath.row].ItemImage.ChangeSpacetoPer20())!, placeholderImage: UIImage(named: ""), options: .refreshCached, completed: nil)
                // print("img view is \(cell.imgItemImage)")
             }
+            
+            var canEdit = false
             
             if((self.currentSelectedIndex == 0 && self.canEditBrk) || (self.currentSelectedIndex == 1 && self.canEditLunch) || (self.currentSelectedIndex == 2 && self.canEditDinner))
             {
@@ -582,13 +616,37 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 {
                     cell.btn_plus.setTitleColor(UIColor.black, for: .normal)
                 }
+                
+                canEdit = true
             }
             else
             {
                 cell.btn_minus.setTitleColor(UIColor.lightGray, for: .normal)
                 cell.btn_plus.setTitleColor(UIColor.lightGray, for: .normal)
             }
-                
+                        
+            if(menuItems[indexPath.row].ItemType == ItemType.SubCatItem)
+            {
+                cell.cns_labelLeading.constant = 15
+               // cell.cns_TitleTop.constant = 10
+               // cell.cns_TitleBottom.constant = 10
+                cell.cns_vwSeperateor_height.constant = 0
+            }
+            else
+            {
+                cell.cns_labelLeading.constant = 0
+              //  cell.cns_TitleTop.constant = 20
+              //  cell.cns_TitleBottom.constant = 20
+                if(indexPath.row == menuItems.count - 1)
+                {
+                    cell.cns_vwSeperateor_height.constant = 0
+                }
+                else
+                {
+                    cell.cns_vwSeperateor_height.constant = 1
+                }
+            }
+            cell.cl_cell_width = (UIScreen.main.bounds.size.width - cell.cns_labelLeading.constant)/2
             
             cell.lbl_quantity.text = "\(menuItems[indexPath.row].ItemQuantity!)"
             cell.btn_plus.tag = (indexPath.section * 1000) + indexPath.row
@@ -597,16 +655,39 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             cell.btn_minus.addTarget(self, action: #selector(MinusQuantity), for: .touchUpInside)
             
             
-            if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            if(self.IsForkitchenSummary == true)
             {
                 DispatchQueue.main.asyncAfter(deadline: .now() +  0.05) {
                     cell.lbl_quantity.font = UIFont(name: "Helvetica-Bold", size: ((UIDevice.current.userInterfaceIdiom == .pad) ? 28.0 : 22.0))
+                   // cell.lblTitleTop.constant = (cell.imgItemImage.frame.size.height - cell.lblItemName.frame.size.height)/2
+                    cell.btn_plus.isHidden = true
+                    cell.btn_minus.isHidden = true
+                    cell.vw_container.backgroundColor = .clear
                 }
+            }
+            else
+            {
+                cell.configure(withModel: menuItems[indexPath.row], canEdit: canEdit)
+                cell.helperDelegate = self
+                
             }
             
             return cell
         }
-                      
+    }
+    
+    @objc func selectMenuItemForChange(_ sender: UILongPressGestureRecognizer)
+    {
+        let img = sender.view as! UIImageView
+        let sec = img.tag/1000
+        let rw = img.tag%1000
+        
+        if(sender.state == .began)
+        {
+            print("section is \(sec) and row is \(rw)")
+        }
+        
         
     }
     
@@ -617,8 +698,6 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         let rw = img.tag%1000
         
         let menuItems = (self.arItemList[sec].CatItems)
-        
-      
         
         let dt = NSData(contentsOf: URL(string: menuItems[rw].ItemImage.ChangeSpacetoPer20())!)
         self.imgGallery.image =  UIImage(data: dt! as Data)
@@ -631,7 +710,6 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             //self.imgGallery.isHidden = false
             self.imgGallery.alpha = 1.0
         })
-        
         
 //        let FullImgVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "FullmageVC") as! FullmageVC
 //        self.navigationController?.pushViewController(FullImgVC, animated: false)
@@ -653,69 +731,72 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             self.lblNoMenu.text = "Breakfast Menu is not available."
             self.lblNoMenu.isHidden = (self.arrBreakfastItems.count == 0) ? false : true
             self.tblItemList.isHidden = (self.arrBreakfastItems.count == 0) ? true : false
-//            self.vw_tray.isHidden = (self.arrBreakfastItems.count == 0) ? true : false
-//            self.vw_escort.isHidden = (self.arrBreakfastItems.count == 0) ? true : false
             self.cns_lblGuideline_top.constant = 20
-            self.lblGuideline.text = (self.arrBreakfastItems.count == 0) ? "" : AppDelegate.sharedDelegate().guidelineText
+            self.lblGuideline.text = (self.arrBreakfastItems.count == 0) ? "" : AppDelegate.sharedDelegate().brk_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.arItemList = self.arrBreakfastItems
             self.btnTray.isSelected = (self.IsTrayForBrk == 1) ? true : false
             self.btnEscort.isSelected = (self.IsEscortForBrk == 1) ? true : false
+            self.btnTakeout.isSelected = (self.IsTakeoutForBrk == 1) ? true : false
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory } })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditBrk == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditBrk == true)
         }
         else if(selectedIndex == 1)
         {
             self.lblNoMenu.text = "Lunch Menu is not available."
             self.lblNoMenu.isHidden = (self.arrLunchItems.count == 0) ? false : true
             self.tblItemList.isHidden = (self.arrLunchItems.count == 0) ? true : false
-//            self.vw_tray.isHidden = (self.arrLunchItems.count == 0) ? true : false
-//            self.vw_escort.isHidden = (self.arrLunchItems.count == 0) ? true : false
             self.cns_lblGuideline_top.constant = 20
-            self.lblGuideline.text = (self.arrLunchItems.count == 0) ? "" :AppDelegate.sharedDelegate().guidelineText
+            self.lblGuideline.text = (self.arrLunchItems.count == 0) ? "" :AppDelegate.sharedDelegate().lunch_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.arItemList = self.arrLunchItems
             self.btnTray.isSelected = (self.IsTrayForLunch == 1) ? true : false
             self.btnEscort.isSelected = (self.IsEscortForLunch == 1) ? true : false
+            self.btnTakeout.isSelected = (self.IsTakeoutForLunch == 1) ? true : false
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditLunch == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditLunch == true)
         }
         else
         {
             self.lblNoMenu.text = "Dinner Menu is not available."
             self.lblNoMenu.isHidden = (self.arrDinnerItems.count == 0) ? false : true
             self.tblItemList.isHidden = (self.arrDinnerItems.count == 0) ? true : false
-//            self.vw_tray.isHidden = (self.arrDinnerItems.count == 0) ? true : false
-//            self.vw_escort.isHidden = (self.arrDinnerItems.count == 0) ? true : false
-            self.cns_lblGuideline_top.constant = 0
-            self.lblGuideline.text = ""
+//            self.cns_lblGuideline_top.constant = 0
+//            self.lblGuideline.text = ""
+            self.cns_lblGuideline_top.constant = 20
+            self.lblGuideline.text = (self.arrDinnerItems.count == 0) ? "" :AppDelegate.sharedDelegate().dinner_guidelineText
             self.btnBrk.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnLunch.setTitleColor(UIColor.ColorCodes.homeUnselectedCategory, for: .normal)
             self.btnDinner.setTitleColor(UIColor.ColorCodes.homeSelectedCategory, for: .normal)
             self.arItemList = self.arrDinnerItems
             self.btnTray.isSelected = (self.IsTrayForDinner == 1) ? true : false
             self.btnEscort.isSelected = (self.IsEscortForDinner == 1) ? true : false
+            self.btnTakeout.isSelected = (self.IsTakeoutForDinner == 1) ? true : false
             
             self.btnBrk.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnLunch.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeUnselectedCategory} })
             self.btnDinner.subviews.forEach({ if($0.tag == 1111) {$0.backgroundColor = UIColor.ColorCodes.homeSelectedCategory} })
             
-            self.btnSubmit.isEnabled = (AppDelegate.sharedDelegate().UserRole == "kitchen") ? true : (self.canEditDinner == true)
+            //AppDelegate.sharedDelegate().UserRole == "kitchen"
+            self.btnSubmit.isEnabled = (self.IsForkitchenSummary == true) ? true : (self.canEditDinner == true)
         }
         
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        if(self.IsForkitchenSummary == true)
         {
             self.vw_tray.isHidden = true
         }
@@ -728,14 +809,17 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         {
             self.vw_tray.isUserInteractionEnabled = true
             self.vw_escort.isUserInteractionEnabled = true
+            self.vw_takeout.isUserInteractionEnabled = true
         }
         else
         {
             self.vw_tray.isUserInteractionEnabled = false
             self.vw_escort.isUserInteractionEnabled = false
+            self.vw_takeout.isUserInteractionEnabled = false
         }
         //self.btnTray.isEnabled = (totalOrders > 0 && self.btnSubmit.isEnabled) ? true : false
         self.vw_escort.isHidden = self.vw_tray.isHidden
+        self.vw_takeout.isHidden = self.vw_tray.isHidden
         //self.btnEscort.isEnabled = (totalOrders > 0 && self.btnSubmit.isEnabled) ? true : false
         self.cns_stkSrvVwHight.constant = (self.vw_tray.isHidden) ? 0 : 30
         self.cns_stkViewTop.constant = (self.vw_tray.isHidden) ? 0 : 20
@@ -773,18 +857,18 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 self.arItemList[sec].LatestSelectedIndex = rw
                     
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemOptions.count > 0 && (menuItems[rw].ItemOptions.count == menuItems[rw].ItemOptions.filter({ $0.IsSelected == 0 }).count))
                     {
                         menuItems[rw].ItemOptions[0].IsSelected = 1
                     }
                     menuItems[rw].isExpanded = 1
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
             }
@@ -798,14 +882,14 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                         var isremove = true
                         if(self.Occupancy > 1)
                         {
-                            if(menuItems[rw].ItemQuantity == 1)
-                            {
-                                
-                            }
-                            else if(i != self.arItemList[sec].LatestSelectedIndex)
-                            {
-                                isremove = false
-                            }
+////                            if(menuItems[rw].ItemQuantity == 1)
+////                            {
+////
+////                            }
+////                            else if(i != self.arItemList[sec].LatestSelectedIndex)
+////                            {
+////                                isremove = false
+////                            }
 //                            if(menuItems[i].ItemQuantity == self.Occupancy ||  menuItems[rw].ItemQuantity == 1)
 //                            {
 //
@@ -820,11 +904,11 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                         {
                             menuItems[i].ItemQuantity = menuItems[i].ItemQuantity  - 1
                             
-                            if(menuItems[i].ItemType == ItemType.SubCatItem)
-                            {
-                            }
-                            else
-                            {
+//                            if(menuItems[i].ItemType == ItemType.SubCatItem)
+//                            {
+//                            }
+//                            else
+//                            {
                                 if(menuItems[i].ItemQuantity == 0)
                                 {
                                     menuItems[i].isExpanded = 0
@@ -832,7 +916,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                                     menuItems[i].Preferences.forEach({ $0.IsSelected = 0 })
                                 }
                                // self.tblItemList.reloadRows(at: [IndexPath(row: i, section: sec)], with: .automatic)
-                            }
+//                            }
                             
                             self.convertToDict(menuItem: menuItems[i])
                             print("in add remove previous at index \(i)")
@@ -847,18 +931,18 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 self.arItemList[sec].LatestSelectedIndex = rw
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
                 
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemOptions.count > 0 && (menuItems[rw].ItemOptions.count == menuItems[rw].ItemOptions.filter({ $0.IsSelected == 0 }).count))
                     {
                         menuItems[rw].ItemOptions[0].IsSelected = 1
                     }
                     menuItems[rw].isExpanded = 1
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
@@ -957,6 +1041,9 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            dictDateItem["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            dictDateItem["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            dictDateItem["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
             self.dictItems.append(dictDateItem)
         }
         self.IsOrderSubmitted = false
@@ -1039,6 +1126,9 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            dictDateItem["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            dictDateItem["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            dictDateItem["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
             self.dictItems.append(dictDateItem)
         }
         
@@ -1047,14 +1137,12 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         let totalOrders = self.arItemList.map({ $0.NoOfItemsSelected }).reduce(0, +)
         self.vw_tray.isHidden = (totalOrders > 0) ? false : true
         self.vw_escort.isHidden = self.vw_tray.isHidden
+        self.vw_takeout.isHidden = self.vw_tray.isHidden
         self.cns_stkSrvVwHight.constant = (self.vw_tray.isHidden) ? 0 : 30
         self.cns_stkViewTop.constant = (self.vw_tray.isHidden) ? 0 : 20
         self.cns_stkViewBottom.constant = (self.vw_tray.isHidden) ? 0 : 20
-//        self.btnTray.isEnabled = (totalOrders > 0) ? true : false
-//        self.btnEscort.isEnabled = (totalOrders > 0) ? true : false
         
         if(self.vw_tray.isHidden == true)
-        //if(!self.btnTray.isEnabled)
         {
             self.btnTray.isSelected = false
             
@@ -1082,7 +1170,6 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         }
         
         if(self.vw_escort.isHidden == true)
-        //if(!self.btnEscort.isEnabled)
         {
             self.btnEscort.isSelected = false
                         
@@ -1105,6 +1192,29 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             }
         }
         
+        if(self.vw_takeout.isHidden == true)
+        {
+            self.btnTakeout.isSelected = false
+                        
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+            
+//            if(self.currentSelectedIndex == 0)
+//            {
+//                self.IsEscortForBrk = 0
+//                self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+//            }
+//            else if(self.currentSelectedIndex == 1)
+//            {
+//                self.IsEscortForLunch = 0
+//                self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+//            }
+//            else
+//            {
+//                self.IsEscortForDinner = 0
+//                self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+//            }
+        }
+        
         let json: JSON = JSON(self.dictItems)
         print("NEW DICT FORMAT is \(json.rawString()!)")
     }
@@ -1125,11 +1235,11 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                 self.arItemList[sec].NoOfItemsSelected = self.arItemList[sec].NoOfItemsSelected - 1
                 menuItems[rw].ItemQuantity = menuItems[rw].ItemQuantity - 1
                 //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .none)
-                if(menuItems[rw].ItemType == ItemType.SubCatItem)
-                {
-                }
-                else
-                {
+//                if(menuItems[rw].ItemType == ItemType.SubCatItem)
+//                {
+//                }
+//                else
+//                {
                     if(menuItems[rw].ItemQuantity == 0)
                     {
                         menuItems[rw].isExpanded = 0
@@ -1137,7 +1247,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                         menuItems[rw].Preferences.forEach({ $0.IsSelected = 0 })
                     }
                     //self.tblItemList.reloadRows(at: [IndexPath(row: rw, section: sec)], with: .automatic)
-                }
+//                }
                 
                 self.tblItemList.reloadData()
                 self.convertToDict(menuItem: menuItems[rw])
@@ -1147,22 +1257,23 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
 
     @IBAction func btnSubmit_Clicked(_ sender: Any)
     {
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
+        if(self.IsForkitchenSummary == true)
         {
             let reportVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ReportVC") as! ReportVC
             reportVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
-            reportVC.selectedDate = self.selectedDate
+           // reportVC.selectedDate = self.selectedDate
             self.navigationController?.pushViewController(reportVC, animated: false)
         }
         else
         {
             var orders_to_change = ""
-            if(self.dictItems.count > 0)
-            {
+           // if(self.dictItems.count > 0)
+            //{
                 let json: JSON = JSON(self.dictItems)
                 print("string converted object is \(json.rawString()!)")
                 orders_to_change = json.rawString()!
-            }
+            //}
             self.view.isUserInteractionEnabled = false
             self.act_indicator.startAnimating()
             
@@ -1214,6 +1325,7 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                             self.dictItems.removeAll()
                             self.dictItems.append(temp)
                         }
+                        CommonUtility.shared.showErrorAlertOnWindow("Success", message: "Order successfully Submitted.")
                     }
                     else
                     {
@@ -1242,8 +1354,8 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         vw.backgroundColor = UIColor.ColorCodes.dinningTblHeaderBgColor
         
         let btn = UIButton(type: .custom)
-        btn.frame = CGRect(x: 0, y: 0, width: vw.frame.size.width, height: vw.frame.size.height)
-        btn.contentHorizontalAlignment = .center
+       // btn.frame = CGRect(x: 0, y: 0, width: vw.frame.size.width, height: vw.frame.size.height)
+       // btn.contentHorizontalAlignment = .center
         btn.titleLabel?.font = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica-Bold", size: 22.0) : UIFont(name: "Helvetica-Bold", size: 17.0)
         if(AppDelegate.sharedDelegate().LanguagePref == 0)
         {
@@ -1261,8 +1373,42 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         //print("sub cat count is \(self.arItemList[section].SubCatItems.count)")
         btn.setTitleColor(UIColor.ColorCodes.dinningTblHeaderColor, for: .normal)
         //btn.addTarget(self, action: #selector(redirectToItemSelectionVC), for: .touchUpInside)
-        btn.tag = section
-        vw.addSubview(btn)
+        // btn.tag = section
+        
+        var spacing = 2
+        let btn2 = UIButton(type: .custom)
+        btn2.titleLabel?.font = (UIDevice.current.userInterfaceIdiom == .pad) ? UIFont(name: "Helvetica", size: 20.0) : UIFont(name: "Helvetica", size: 15.0)
+        
+        if(self.currentSelectedIndex == 1 && self.arItemList[section].CatName.uppercased() == "LUNCH ENTREE")
+        {
+            btn2.setTitle("(\("servedWithSoup".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)))", for: .normal)
+        }
+        else if(self.currentSelectedIndex == 2 && self.arItemList[section].CatName.uppercased() == "DINNER ENTREE")
+        {
+            btn2.setTitle("(\("servedWithDessert".localizeString(string: AppDelegate.sharedDelegate().LanguagePrefCode)))", for: .normal)
+        }
+        else
+        {
+            spacing = 0
+            btn2.setTitle("", for: .normal)
+            btn2.isHidden = true
+        }
+        btn2.setTitleColor(UIColor.ColorCodes.dinningTblHeaderColor, for: .normal)
+        
+        let stackView = UIStackView(arrangedSubviews: [btn, btn2])
+                stackView.axis = .horizontal
+                stackView.spacing = CGFloat(spacing)
+                stackView.alignment = .center
+                stackView.distribution = .fill
+                stackView.translatesAutoresizingMaskIntoConstraints = false
+        vw.addSubview(stackView)
+                
+                NSLayoutConstraint.activate([
+                    stackView.centerXAnchor.constraint(equalTo: vw.centerXAnchor),
+                    stackView.centerYAnchor.constraint(equalTo: vw.centerYAnchor)
+                ])
+                
+        //vw.addSubview(btn)
         
         return vw
     }
@@ -1385,12 +1531,26 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         //"get-categorywise-data"
         print("input is \(["room_id" : self.selectedRoomID, "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "type" : self.currentSelectedIndex + 1])")
         NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + "order-list", parameters: ["room_id" : self.selectedRoomID, "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"), "type" : self.currentSelectedIndex + 1]) { (response) in
+            
+            self.view.isUserInteractionEnabled = true
+            self.act_indicator.stopAnimating()
             if(response.error == nil)
             {
-                self.view.isUserInteractionEnabled = true
-                self.act_indicator.stopAnimating()
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
+                    if(response.result["is_brk_printed"].intValue == 1)
+                    {
+                        self.canEditBrk = false
+                    }
+                    if(response.result["is_lunch_printed"].intValue == 1)
+                    {
+                        self.canEditLunch = false
+                    }
+                    if(response.result["is_dinner_printed"].intValue == 1)
+                    {
+                        self.canEditDinner = false
+                    }
+                    
                     print(response.result)
                     self.IsTrayForBrk = response.result["is_brk_tray_service"].intValue
                     self.IsTrayForLunch = response.result["is_lunch_tray_service"].intValue
@@ -1398,6 +1558,9 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                     self.IsEscortForBrk = response.result["is_brk_escort_service"].intValue
                     self.IsEscortForLunch = response.result["is_lunch_escort_service"].intValue
                     self.IsEscortForDinner = response.result["is_dinner_escort_service"].intValue
+                    self.IsTakeoutForBrk = response.result["is_brk_takeout_service"].intValue
+                    self.IsTakeoutForLunch = response.result["is_lunch_takeout_service"].intValue
+                    self.IsTakeoutForDinner = response.result["is_dinner_takeout_service"].intValue
                     self.arrBreakfastItems.removeAll()
                     self.arrBreakfastItems.append(contentsOf: response.result[MainResponseCodeConstant.keyBrk].arrayValue.compactMap(clsCategoryItems.init))
                     self.arrLunchItems.removeAll()
@@ -1422,13 +1585,12 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
                     
                     //self.dictItems.removeAll()
                     
-                    if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+                    //AppDelegate.sharedDelegate().UserRole == "kitchen"
+                    if(self.IsForkitchenSummary == true)
                     {
-                        
                     }
                     else
                     {
-                        
                         if(totalBrkOrders == 0)
                         {
                         }
@@ -1541,15 +1703,66 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         
         if(self.currentSelectedIndex == 0)
         {
-            self.IsTrayForBrk = (self.btnTray.isSelected) ? 1 : 0
+            if(self.btnTray.isSelected)
+            {
+                self.IsTrayForBrk = 1
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForBrk = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForBrk = 0
+                }
+            }
+            else
+            {
+                self.IsTrayForBrk = 0
+            }
         }
         else if(self.currentSelectedIndex == 1)
         {
-            self.IsTrayForLunch = (self.btnTray.isSelected) ? 1 : 0
+            if(self.btnTray.isSelected)
+            {
+                self.IsTrayForLunch = 1
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForLunch = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForLunch = 0
+                }
+            }
+            else
+            {
+                self.IsTrayForLunch = 0
+            }
         }
         else
         {
-            self.IsTrayForDinner = (self.btnTray.isSelected) ? 1 : 0
+            if(self.btnTray.isSelected)
+            {
+                self.IsTrayForDinner = 1
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForDinner = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForDinner = 0
+                }
+            }
+            else
+            {
+                self.IsTrayForDinner = 0
+            }
         }
      
         if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
@@ -1559,12 +1772,18 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             self.dictItems[idx_date]["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
             self.dictItems[idx_date]["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
             self.dictItems[idx_date]["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
         }
         else
         {
             var dictDateItem = [
             "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
-            "items" : [[:]]
+            "items" : []//[[:]]
             ] as [String : AnyObject]
             
             dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
@@ -1573,6 +1792,9 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            dictDateItem["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            dictDateItem["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            dictDateItem["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
             self.dictItems.append(dictDateItem)
         }
         self.IsOrderSubmitted = false
@@ -1586,15 +1808,66 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
         
         if(self.currentSelectedIndex == 0)
         {
-            self.IsEscortForBrk = (self.btnEscort.isSelected) ? 1 : 0
+            if(self.btnEscort.isSelected)
+            {
+                self.IsEscortForBrk = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForBrk = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForBrk = 0
+                }
+            }
+            else
+            {
+                self.IsEscortForBrk = 0
+            }
         }
         else if(self.currentSelectedIndex == 1)
         {
-            self.IsEscortForLunch = (self.btnEscort.isSelected) ? 1 : 0
+            if(self.btnEscort.isSelected)
+            {
+                self.IsEscortForLunch = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForLunch = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForLunch = 0
+                }
+            }
+            else
+            {
+                self.IsEscortForLunch = 0
+            }
         }
         else
         {
-            self.IsEscortForDinner = (self.btnEscort.isSelected) ? 1 : 0
+            if(self.btnEscort.isSelected)
+            {
+                self.IsEscortForDinner = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForDinner = 0
+                }
+                if(self.btnTakeout.isSelected)
+                {
+                    self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+                    self.IsTakeoutForDinner = 0
+                }
+            }
+            else
+            {
+                self.IsEscortForDinner = 0
+            }
         }
         
         if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
@@ -1604,12 +1877,18 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
         }
         else
         {
             var dictDateItem = [
             "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
-            "items" : [[:]]
+            "items" : []//[[:]]
             ] as [String : AnyObject]
             
             dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
@@ -1618,12 +1897,128 @@ class MealItemsVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, F
             dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
             dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
             dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            dictDateItem["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            dictDateItem["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            dictDateItem["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
             self.dictItems.append(dictDateItem)
         }
         
         self.IsOrderSubmitted = false
         let json: JSON = JSON(self.dictItems)
         print("NEW DICT FORMAT is \(json.rawString()!)")
+    }
+    
+    @IBAction func btnTakeOut_Clicked(_ sender: Any)
+    {
+        self.btnTakeout.isSelected = !self.btnTakeout.isSelected
+        
+        if(self.currentSelectedIndex == 0)
+        {
+            if(self.btnTakeout.isSelected)
+            {
+                self.IsTakeoutForBrk = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForBrk = 0
+                }
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForBrk = 0
+                }
+            }
+            else
+            {
+                self.IsTakeoutForBrk = 0
+            }
+        }
+        else if(self.currentSelectedIndex == 1)
+        {
+            if(self.btnTakeout.isSelected)
+            {
+                self.IsTakeoutForLunch = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForLunch = 0
+                }
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForLunch = 0
+                }
+            }
+            else
+            {
+                self.IsTakeoutForLunch = 0
+            }
+        }
+        else
+        {
+            if(self.btnTakeout.isSelected)
+            {
+                self.IsTakeoutForDinner = 1
+                if(self.btnTray.isSelected)
+                {
+                    self.btnTray.isSelected = !self.btnTray.isSelected
+                    self.IsTrayForDinner = 0
+                }
+                if(self.btnEscort.isSelected)
+                {
+                    self.btnEscort.isSelected = !self.btnEscort.isSelected
+                    self.IsEscortForDinner = 0
+                }
+            }
+            else
+            {
+                self.IsTakeoutForDinner = 0
+            }
+        }
+     
+        if(self.dictItems.map({ $0["date"] as! String }).contains(self.selectedDate.toString(dateFormat: "yyyy-MM-dd")))
+        {
+            let idx_date = self.dictItems.map({ $0["date"] as! String }).firstIndex(of: self.selectedDate.toString(dateFormat: "yyyy-MM-dd"))!
+            
+            self.dictItems[idx_date]["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            self.dictItems[idx_date]["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            self.dictItems[idx_date]["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            self.dictItems[idx_date]["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+        }
+        else
+        {
+            var dictDateItem = [
+            "date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd"),
+            "items" : []//[[:]]
+            ] as [String : AnyObject]
+            
+            dictDateItem["is_brk_tray_service"] = self.IsTrayForBrk as AnyObject
+            dictDateItem["is_lunch_tray_service"] = self.IsTrayForLunch as AnyObject
+            dictDateItem["is_dinner_tray_service"] = self.IsTrayForDinner as AnyObject
+            dictDateItem["is_brk_escort_service"] = self.IsEscortForBrk as AnyObject
+            dictDateItem["is_lunch_escort_service"] = self.IsEscortForLunch as AnyObject
+            dictDateItem["is_dinner_escort_service"] = self.IsEscortForDinner as AnyObject
+            dictDateItem["is_brk_takeout_service"] = self.IsTakeoutForBrk as AnyObject
+            dictDateItem["is_lunch_takeout_service"] = self.IsTakeoutForLunch as AnyObject
+            dictDateItem["is_dinner_takeout_service"] = self.IsTakeoutForDinner as AnyObject
+            self.dictItems.append(dictDateItem)
+        }
+        self.IsOrderSubmitted = false
+        let json: JSON = JSON(self.dictItems)
+        print("NEW DICT FORMAT is \(json.rawString()!)")
+    }
+    
+    @IBAction func btnEditRoom_Clicked(_ sender: Any)
+    {
+        let EditResVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "EditResidentVC") as! EditResidentVC
+        EditResVC.selectedRoomID = self.selectedRoomID
+        EditResVC.selectedRoomName = self.selectedRoomName
+        self.navigationController?.pushViewController(EditResVC, animated: false)
     }
     
     @IBAction func btnLogOut_Clicked(_ sender: Any)

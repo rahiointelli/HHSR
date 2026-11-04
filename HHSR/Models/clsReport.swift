@@ -11,15 +11,20 @@ import SwiftyJSON
 class clsReport : NSObject
 {
     var RoomNo : String!
-    var Quantity : [Int] = []
+    var Quantity : [String:Any]! //[Int] = []
     
+    
+    init(RName: String!)
+    {
+        self.RoomNo = RName
+    }
     
     init(fromJson json: JSON!){
         if json.isEmpty{
             return
         }
         RoomNo = json["room_no"].stringValue
-        Quantity = json["quantity"].arrayValue.map({ $0.intValue })
+        Quantity = json["quantity"].dictionaryObject //arrayValue.map({ $0.intValue })
     }
     
 //    init(prjId : Int, prjName : String, prjDesc : String) {
@@ -33,16 +38,16 @@ class clsReport : NSObject
 class clsReportCharges : NSObject
 {
     var RoomNo : String!
-    var Data : [Int] = []
-    var OptionName : [String] = []
+    var Data : [String:Any]!
+    var OptionName : [String:Any]!
     
     init(fromJson json: JSON!){
         if json.isEmpty{
             return
         }
         RoomNo = json["room_no"].stringValue
-        Data = json["data"].arrayValue.map({ $0.intValue })
-        OptionName = json["option"].arrayValue.map({ $0.stringValue })
+        Data = json["data"].dictionaryObject// arrayValue.map({ $0.dictionaryObject! })
+        OptionName = json["option"].dictionaryObject //.arrayValue.map({  $0.dictionaryObject! })
     }
 }
 

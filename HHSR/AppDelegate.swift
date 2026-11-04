@@ -8,11 +8,12 @@
 import UIKit
 import IQKeyboardManagerSwift
 import Firebase
+import UserNotifications
 
 var appDelegate: AppDelegate = UIApplication.shared.delegate as! AppDelegate
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
     var RoomId : String = ""
@@ -23,7 +24,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var LanguagePrefCode : String = "en"
     var LastMenuDate : Date = Date()
     var UserRole : String = "user"
-    var guidelineText : String = ""
+    var brk_guidelineText : String = ""
+    var lunch_guidelineText : String = ""
+    var dinner_guidelineText : String = ""
     var isPrintPermissionAsked : String = ""
     var arRoomList : [clsRoom] = []
     var lastMenuDate : String = ""
@@ -31,6 +34,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var arUserList : [clsUsers] = []
     var arLoggedBy : [String] = []
     var UserId : String = ""
+    var showDining = 0
+    var showIncident = 0
+    var IsForkitchenSummary = false
     
     class func sharedDelegate() -> AppDelegate
     {
@@ -43,6 +49,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.window = UIWindow(frame: UIScreen.main.bounds)
         IQKeyboardManager.shared.enable = true        
         IQKeyboardManager.shared.shouldShowToolbarPlaceholder = false
+        UNUserNotificationCenter.current().delegate = self
+        
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { (granted, error) in
+                  if granted {
+                      DispatchQueue.main.async {
+                          UIApplication.shared.registerForRemoteNotifications()
+                      }
+                  } else {
+                      print("Permission for push notifications denied.")
+                  }
+        }
         
         self.RoomId = CommonUtility.shared.getRoomId()
         self.RoomName = CommonUtility.shared.getRoomName()
@@ -83,6 +100,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
     
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        self.refreshRoomList()
+    }
+    
     func applicationDidEnterBackground(_ application: UIApplication) {
         self.window?.endEditing(true)
         
@@ -97,6 +118,87 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NavVc.isNavigationBarHidden = true
         self.window?.rootViewController = NavVc
         self.window?.makeKeyAndVisible()
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.map { String(format: "%02x", $0) }.joined()//"%02x" //%02.2hhx
+        //print("Device Token: \(token)")
+        
+        let params : [String : Any] = ["token" : token]
+        NetworkUtilities.shared.makePOSTRequest(with: API.baseURL + API.set_device_token_api, parameters: params) { (response) in
+        
+            if (response.error == nil)
+            {
+                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
+                {
+                    print("Device Token: \(token)")
+                }
+                else
+                {
+                   // CommonUtility.shared.showErrorAlertOnWindow(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
+                }
+            }
+            else
+            {
+//                 if(response.error!.localizedDescription == ErrorMsg.keyTurnOnAppCellularData)
+//                 {
+//                     CommonUtility.shared.showAppCellularDataAlertOnWindow(message: response.error!.localizedDescription)
+//                 }
+//                 else
+//                 {
+//                     CommonUtility.shared.showErrorAlertOnWindow(message: response.error!.localizedDescription)
+//                 }
+            }
+        }
+    }
+    
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("Failed to register:", error.localizedDescription)
+    }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: NotificationNamesConstant.keyAppBecameActive), object: nil, userInfo: nil)
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping(UIBackgroundFetchResult) -> Void) {
+        print("Did receive remote fetch completion")
+        //CommonUtility.shared.showErrorAlertOnWindow(message: "Push received")
+        self.refreshRoomList()
+        completionHandler(.newData)
+    }
+    
+    func refreshRoomList()
+    {
+        print("start room refresh")
+       // let params : [String : Any] = ["token" : token]
+        NetworkUtilities.shared.makeGETRequest(with: API.baseURL + "rooms-list") { (response) in
+         
+            if (response.error == nil)
+            {
+                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
+                {
+                    print("end room refresh")
+                    AppDelegate.sharedDelegate().arRoomList.removeAll()
+                    AppDelegate.sharedDelegate().arRoomList.append(contentsOf: response.result[MainResponseCodeConstant.keyRoomsList].arrayValue.compactMap(clsRoom.init))
+                }
+                else
+                {
+                    // CommonUtility.shared.showErrorAlertOnWindow(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
+                }
+            }
+            else
+            {
+                //                 if(response.error!.localizedDescription == ErrorMsg.keyTurnOnAppCellularData)
+                //                 {
+                //                     CommonUtility.shared.showAppCellularDataAlertOnWindow(message: response.error!.localizedDescription)
+                //                 }
+                //                 else
+                //                 {
+                //                     CommonUtility.shared.showErrorAlertOnWindow(message: response.error!.localizedDescription)
+                //                 }
+            }
+        }
     }
 
 }

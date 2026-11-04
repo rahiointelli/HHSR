@@ -80,6 +80,8 @@ class SplashScreenVC: UIViewController {
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
                     print(response.result)
+                    AppDelegate.sharedDelegate().showDining = response.result["show_dining"].intValue
+                    AppDelegate.sharedDelegate().showIncident = response.result["show_incident"].intValue
                     AppDelegate.sharedDelegate().UserId = response.result["user_id"].stringValue
                     AppDelegate.sharedDelegate().arRoomList.removeAll()
                     AppDelegate.sharedDelegate().arRoomList.append(contentsOf: response.result[MainResponseCodeConstant.keyRoomsList].arrayValue.compactMap(clsRoom.init))
@@ -88,17 +90,21 @@ class SplashScreenVC: UIViewController {
                     AppDelegate.sharedDelegate().Occupancy = response.result["occupancy"].intValue
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd"
-                    AppDelegate.sharedDelegate().LastMenuDate = formatter.date(from: response.result[MainResponseCodeConstant.keyLastMenuDate].stringValue)!
+                    AppDelegate.sharedDelegate().LastMenuDate = formatter.date(from: response.result[MainResponseCodeConstant.keyLastMenuDate].stringValue) ??  Date()
                     AppDelegate.sharedDelegate().LanguagePref = response.result["language"].intValue
                     if(AppDelegate.sharedDelegate().LanguagePref == 0)
                     {
                         AppDelegate.sharedDelegate().LanguagePrefCode = "en"
-                        AppDelegate.sharedDelegate().guidelineText = response.result["guideline"].stringValue
+                        AppDelegate.sharedDelegate().brk_guidelineText = response.result["breakfast_guideline"].stringValue
+                        AppDelegate.sharedDelegate().lunch_guidelineText = response.result["lunch_guideline"].stringValue
+                        AppDelegate.sharedDelegate().dinner_guidelineText = response.result["dinner_guideline"].stringValue
                     }
                     else
                     {
                         AppDelegate.sharedDelegate().LanguagePrefCode = "zh-HK"
-                        AppDelegate.sharedDelegate().guidelineText = response.result["guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().brk_guidelineText = response.result["breakfast_guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().lunch_guidelineText = response.result["lunch_guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().dinner_guidelineText = response.result["dinner_guideline_cn"].stringValue
                     }
                                         
                     DispatchQueue.main.asyncAfter(deadline: .now() +  2.2) {
@@ -109,13 +115,26 @@ class SplashScreenVC: UIViewController {
                             AppDelegate.sharedDelegate().arUserList.removeAll()
                             AppDelegate.sharedDelegate().arUserList.append(contentsOf: response.result["user_list"].arrayValue.compactMap(clsUsers.init))
                             
-//                            let SearchRoomVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SearchRoomVC") as! SearchRoomVC
-//                            self.navigationController?.pushViewController(SearchRoomVC, animated: false)
+                            if(AppDelegate.sharedDelegate().showIncident == 1)
+                            {
+                                let catVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "CategorySelectionVC") as! CategorySelectionVC
+                                self.navigationController?.pushViewController(catVC, animated: false)
+                            }
+                            else
+                            {
+                                let SearchRoomVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SearchRoomVC") as! SearchRoomVC
+                                self.navigationController?.pushViewController(SearchRoomVC, animated: false)
+                            }
+                            
+                        }
+                        else if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+                        {
                             let catVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "CategorySelectionVC") as! CategorySelectionVC
                             self.navigationController?.pushViewController(catVC, animated: false)
                         }
                         else
                         {
+                            AppDelegate.sharedDelegate().IsForkitchenSummary = false
                             let MealItemsVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MealItemsVC") as! MealItemsVC
                             MealItemsVC.selectedRoomName = AppDelegate.sharedDelegate().RoomName
                             MealItemsVC.selectedRoomID = Int(AppDelegate.sharedDelegate().RoomId)!

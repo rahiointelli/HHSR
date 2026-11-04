@@ -427,7 +427,8 @@ class NetworkUtilities : NSObject
         {
             headers = [
             "Content-type": "application/json",
-            "Authorization": CommonUtility.shared.getAPIToken()]
+            "Authorization": CommonUtility.shared.getAPIToken()] //"ZXlKMWMyVnlYMmxrSWpveExDSjBhVzFsYzNSaGJYQWlPakUzTkRnNE5UWXhNakFzSW5KdmJHVWlPaUpyYVhSamFHVnVJbjA9"]//CommonUtility.shared.getAPIToken()] //"ZXlKMWMyVnlYMmxrSWpveExDSjBhVzFsYzNSaGJYQWlPakUzTkRjMk5UVTBORElzSW5KdmJHVWlPaUpyYVhSamFHVnVJbjA9"]
+                //CommonUtility.shared.getAPIToken()]
         }
         else
         {
@@ -438,7 +439,6 @@ class NetworkUtilities : NSObject
         
 //        let fullURL = self.makeAPIPath(with: urlString)
 //        print("Calling POST: \(fullURL)")
-        
         
         Alamofire.request(urlString, method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: headers)
 //            .responseString{ response in

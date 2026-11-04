@@ -53,6 +53,10 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
         {
             self.lblLoggedInAs.text = "Logged in as Concierge"
         }
+        else if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        {
+            self.lblLoggedInAs.text = "Logged in as Kitchen"
+        }
         else
         {
             self.lblLoggedInAs.text = "Logged in as Nurse"
@@ -145,13 +149,28 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "clCellCategorySelection",for:indexPath) as! clCellCategorySelection
-        if(AppDelegate.sharedDelegate().LanguagePref == 0)
+        
+        if(AppDelegate.sharedDelegate().UserRole == "kitchen" && indexPath.row == 1)
         {
-            cell.img_catIcon.image = UIImage(named: "cat_icon_\(indexPath.row)")
+            if(AppDelegate.sharedDelegate().LanguagePref == 0)
+            {
+                cell.img_catIcon.image = UIImage(named: "cat_icon_kitchen_summary")
+            }
+            else
+            {
+                cell.img_catIcon.image = UIImage(named: "cat_icon_kitchen_summary_cn")
+            }
         }
         else
         {
-            cell.img_catIcon.image = UIImage(named: "cat_icon_cn_\(indexPath.row)")
+            if(AppDelegate.sharedDelegate().LanguagePref == 0)
+            {
+                cell.img_catIcon.image = UIImage(named: "cat_icon_\(indexPath.row)")
+            }
+            else
+            {
+                cell.img_catIcon.image = UIImage(named: "cat_icon_cn_\(indexPath.row)")
+            }
         }
         return cell
     }
@@ -166,6 +185,7 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
         {
 //            if(AppDelegate.sharedDelegate().UserRole == "admin")
 //            {
+                AppDelegate.sharedDelegate().IsForkitchenSummary = false
                 let SearchRoomVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SearchRoomVC") as! SearchRoomVC
                 self.navigationController?.pushViewController(SearchRoomVC, animated: false)
 //            }
@@ -181,8 +201,22 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
         }
         else if(indexPath.row == 1)
         {
-            let ListFormVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ListFormsVC") as! ListFormsVC
-            self.navigationController?.pushViewController(ListFormVC, animated: false)
+            if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+            {
+                AppDelegate.sharedDelegate().IsForkitchenSummary = true
+                let MealItemsVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "MealItemsVC") as! MealItemsVC
+                MealItemsVC.selectedRoomName = AppDelegate.sharedDelegate().RoomName
+                MealItemsVC.selectedRoomID = Int(AppDelegate.sharedDelegate().RoomId)!
+                MealItemsVC.Occupancy = AppDelegate.sharedDelegate().Occupancy
+                MealItemsVC.lastMenuDate = AppDelegate.sharedDelegate().LastMenuDate
+                MealItemsVC.IsForkitchenSummary = true
+                self.navigationController?.pushViewController(MealItemsVC, animated: false)
+            }
+            else
+            {
+                let ListFormVC = UIStoryboard.init(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ListFormsVC") as! ListFormsVC
+                self.navigationController?.pushViewController(ListFormVC, animated: false)
+            }
         }
     }
     
@@ -204,8 +238,6 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
                 self.view.isUserInteractionEnabled = true
                 self.act_indicator.stopAnimating()
                 
-              //  self.CallRoomListService()
-                
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
                     print(response.result)
@@ -216,17 +248,21 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
                     AppDelegate.sharedDelegate().Occupancy = response.result["occupancy"].intValue
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd"
-                    AppDelegate.sharedDelegate().LastMenuDate = formatter.date(from: response.result[MainResponseCodeConstant.keyLastMenuDate].stringValue)!
+                    AppDelegate.sharedDelegate().LastMenuDate = formatter.date(from: response.result[MainResponseCodeConstant.keyLastMenuDate].stringValue) ??  Date()
                     AppDelegate.sharedDelegate().LanguagePref = response.result["language"].intValue
                     if(AppDelegate.sharedDelegate().LanguagePref == 0)
                     {
                         AppDelegate.sharedDelegate().LanguagePrefCode = "en"
-                        AppDelegate.sharedDelegate().guidelineText = response.result["guideline"].stringValue
+                        AppDelegate.sharedDelegate().brk_guidelineText = response.result["breakfast_guideline"].stringValue
+                        AppDelegate.sharedDelegate().lunch_guidelineText = response.result["lunch_guideline"].stringValue
+                        AppDelegate.sharedDelegate().dinner_guidelineText = response.result["dinner_guideline"].stringValue
                     }
                     else
                     {
                         AppDelegate.sharedDelegate().LanguagePrefCode = "zh-HK"
-                        AppDelegate.sharedDelegate().guidelineText = response.result["guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().brk_guidelineText = response.result["breakfast_guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().lunch_guidelineText = response.result["lunch_guideline_cn"].stringValue
+                        AppDelegate.sharedDelegate().dinner_guidelineText = response.result["dinner_guideline_cn"].stringValue
                     }
                                         
                     let img = ((AppDelegate.sharedDelegate().LanguagePref == 0) ? UIImage(named: "btn_logout") : UIImage(named: "btn_logout_cn"))
@@ -234,36 +270,6 @@ class CategorySelectionVC: UIViewController, UICollectionViewDataSource, UIColle
                     self.btnLogOut.isHidden = false
                     self.clCatSelection.reloadData()
                     self.clCatSelection.isHidden = false
-                }
-                else
-                {
-                    self.showMessageAlert(message: response.result[MainResponseCodeConstant.keyResponseText].stringValue)
-                }
-            }
-            else
-            {
-                self.showMessageAlert(message: response.error!.localizedDescription)
-            }
-        }
-    }
-    
-    func CallRoomListService()
-    {
-        self.view.isUserInteractionEnabled = false
-        self.act_indicator.startAnimating()
-
-        NetworkUtilities.shared.makeGETRequest(with: API.baseURL + API.room_list_api) { (response) in
-//, parameters: ["log_date" : self.selectedDate.toString(dateFormat: "yyyy-MM-dd")]
-            if(response.error == nil)
-            {
-                self.view.isUserInteractionEnabled = true
-                self.act_indicator.stopAnimating()
-                if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
-                {
-                    print(response.result["rooms"])
-                    AppDelegate.sharedDelegate().arRoomList.removeAll()
-                    AppDelegate.sharedDelegate().arRoomList.append(contentsOf: response.result[MainResponseCodeConstant.keyRoomsList].arrayValue.compactMap(clsRoom.init))
-                    AppDelegate.sharedDelegate().lastMenuDate = response.result[MainResponseCodeConstant.keyLastMenuDate].stringValue
                 }
                 else
                 {

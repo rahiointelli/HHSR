@@ -49,7 +49,6 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
         self.tblOptions.dataSource = self
         self.clPrefSelection.delegate = self
         self.clPrefSelection.dataSource = self
-        self.cl_cell_width = (UIScreen.main.bounds.size.width/2)
         
         self.tblOptions.register(UINib(nibName: "TblItemOptionCell", bundle: nil), forCellReuseIdentifier: "TblItemOptionCell")
         self.clPrefSelection.register(UINib(nibName: "clCellPrefSelection", bundle: nil), forCellWithReuseIdentifier: "clCellPrefSelection")
@@ -61,7 +60,8 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
             self.vw_container.layer.cornerRadius = 18.0
         }
         
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        if(AppDelegate.sharedDelegate().IsForkitchenSummary == true)
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
         {
             //self.cns_stack_inner_width.constant = 0
             self.btn_plus.isHidden = true
@@ -90,7 +90,7 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
         self.lblTitlePref.isHidden = (model.isExpanded == 1 && model.Preferences.count > 0) ? false : true
         self.clPrefSelection.isHidden = self.lblTitlePref.isHidden
         self.tblOptions.isHidden = (model.isExpanded == 1 && model.ItemOptions.count > 0) ? false : true
-        self.cns_tbl_height.constant = CGFloat(self.model!.ItemOptions.count) * ((UIDevice.current.userInterfaceIdiom == .pad) ? 40.0 : 35.0)
+        self.cns_tbl_height.constant = CGFloat(self.model!.ItemOptions.count) * ((UIDevice.current.userInterfaceIdiom == .pad) ? 41.0 : 36.5)
         if(self.model!.Preferences.count > 0)
         {
             print("pref count is \(model.Preferences.count) and calculated vl is \(Int(self.model!.Preferences.count/2))")
@@ -109,12 +109,15 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
         {
             self.cns_cl_height.constant = 0
         }
-    
+            
         self.clPrefSelection.reloadData()
+//        DispatchQueue.main.asyncAfter(deadline: .now() +  0.03) {
+//            self.layoutIfNeeded()
+//        }
+        self.tblOptions.reloadData()
         
         self.cns_stk_top.constant = (self.tblOptions.isHidden && self.clPrefSelection.isHidden) ? 0 : ((self.tblOptions.isHidden) ? 17 : 8)
-        
-        self.tblOptions.reloadData()
+                
     }
     
 //    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -130,7 +133,8 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
         cell.selectionStyle = .none
         cell.lbltext.text = self.model?.ItemOptions[indexPath.row].Name
         
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        if(AppDelegate.sharedDelegate().IsForkitchenSummary == true)
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
         {
             cell.btnRadio.isHidden = true
             cell.lblquantity.text = "\(self.model?.ItemOptions[indexPath.row].ItemQuantity ?? 0)"
@@ -145,7 +149,8 @@ class TblSubItemListCell: UITableViewCell, UITableViewDelegate, UITableViewDataS
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if(AppDelegate.sharedDelegate().UserRole == "kitchen")
+        if(AppDelegate.sharedDelegate().IsForkitchenSummary == true)
+        //AppDelegate.sharedDelegate().UserRole == "kitchen"
         {
         }
         else if(self.canEdit)

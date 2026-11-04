@@ -443,8 +443,7 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
         self.vw_clearBG.isHidden = true
         self.vw_header.isUserInteractionEnabled = true
         self.vw_DatePickerContainer.removeFromSuperview()
-        
-        
+                
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd" // hh:mm a
         
@@ -898,7 +897,6 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
         }
     }
     
-    
     func callSubmitFormService()
     {
         let dictItem = self.setValuesAsParameters()
@@ -1121,7 +1119,6 @@ class MoveInSummaryVC: UIViewController, UITextFieldDelegate{
                 if(response.result[MainResponseCodeConstant.keyResponseCode].intValue == MainResponseCodeConstant.keyResponseCodeOne)
                 {
                     print(response.result)
-                  
                  
                     let form_detail = response.result["form_data"].dictionaryValue
                     if((form_detail["suite_number"]?.exists()) != nil)

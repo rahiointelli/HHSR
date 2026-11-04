@@ -14,6 +14,11 @@ class clsItemWithCount : NSObject
     var ItemRealName : String!
     var TotalCount : Int = 0
     
+    init(iName : String, iRealName : String)
+    {
+        self.ItemName = iName
+        self.ItemRealName = iRealName
+    }
     
     init(fromJson json: JSON!){
         if json.isEmpty{

@@ -26,7 +26,9 @@ struct API
 {
     //static let baseURL = "http://intelligrp.com/itask/public/api/"
     //static let baseURL = "http://hamiltondinner.intelligrp.com/api/"
-    static let baseURL = "https://hamiltondinnerapp.intellidt.com/api/"
+    //static let baseURL = "https://hamiltondinnerapp.intellidt.com/api/"
+   // static let baseURL = "http://hamiltondinnerapp.staging.intelligrp.com/api/" //ORIGINAL
+    static let baseURL = "http://hamiltondinnerapp.redesign.intellimanagement.com/api/"  //TEST KEENAN URL
 
     //static let baseURL = "http://ilog.intelligrp.com/api/"
     //static let baseURL = "http://itask.canadasentinel.ca/api/" //last this one
@@ -93,6 +95,7 @@ struct API
     static let update_item_list_api = "update-order"
     static let general_form_submit_api = "general-form-submit"
     static let send_email_api = "send-email"
+    static let set_device_token_api = "set-device-token"
     
 }
 
@@ -724,6 +727,8 @@ struct NotificationNamesConstant
     static let keyAppEnteredBg = "AppEnteredBg"
     static let keyRefreshFormList = "RefreshFormList"
     static let keyAttachmentUpdated = "AttachmentUpdated"
+    static let keyAppBecameActive = "AppBecameActive"
+    static let keyAppEnteredFg = "AppEnteredFg"
 }
 
 
@@ -744,20 +749,6 @@ struct PermissionNames
      static let keyViewDocument = "view_document"
 }
 
-struct PermissionFor
-{
-    static let keyProject = "project"
-    static let keySubProject = "sub_project"
-    static let keyTask = "task"
-}
-
-struct PermissionTo
-{
-    static let keyCreator = "creator"
-    static let keyProjectMembers = "project_member"
-    static let keyTaskMembers = "task_member"
-    static let keyAllMembers = "all"
-}
 
 struct PushNotificationKeysConstant
 {

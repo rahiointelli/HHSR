@@ -21,6 +21,7 @@ class clsMenuItems : NSObject
     var ItemOptions : [clsOption] = []
     var Preferences : [clsPreference] = []
     var isExpanded : Int = 0
+    var ParentId : Int = 0
     
     init(fromJson json: JSON!){
         if json.isEmpty{

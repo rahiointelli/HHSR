@@ -28,5 +28,12 @@
 "December" = "December";
 "trayService" = "Tray Service";
 "escortService" = "Escort Service";
+"takeoutService" = "Takeout";
 "noOfGuests" = "No of Guests";
 "guest" = "Guest";
+"foodTexture" = "Food Texture";
+"splInst" = "Special Instructions";
+"allergyInfo" = "Allergy Information";
+"servedWithSoup" = "served with Soup";
+"servedWithDessert" = "served with Dessert";
+"submit" = "Submit";

@@ -198,6 +198,7 @@
 		63D01A9C8C89F07128BA2F11 /* Pods-HHSR-HHSRUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HHSR-HHSRUITests.debug.xcconfig"; path = "Target Support Files/Pods-HHSR-HHSRUITests/Pods-HHSR-HHSRUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		67F2D284715727179E8EC743 /* Pods-HHSR.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HHSR.debug.xcconfig"; path = "Target Support Files/Pods-HHSR/Pods-HHSR.debug.xcconfig"; sourceTree = "<group>"; };
 		682EE62F947975658C625FDB /* Pods-HHSR.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HHSR.release.xcconfig"; path = "Target Support Files/Pods-HHSR/Pods-HHSR.release.xcconfig"; sourceTree = "<group>"; };
+		841DBE0830AF311800C081CA /* README.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = README.md; sourceTree = "<group>"; };
 		8422667F2D1AC00900BCF4AE /* libepos2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = libepos2.xcframework; sourceTree = "<group>"; };
 		84C7A82C2FA9B641000AE5D6 /* HHSR.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HHSR.entitlements; sourceTree = "<group>"; };
 		84C91B042E01409F00554F1D /* EditResidentVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditResidentVC.swift; sourceTree = "<group>"; };
@@ -313,6 +314,7 @@
 		43BCBFCB2A25FDFA00D2DA26 = {
 			isa = PBXGroup;
 			children = (
+				841DBE0830AF311800C081CA /* README.md */,
 				43BCBFD62A25FDFA00D2DA26 /* HHSR */,
 				43BCBFED2A25FE4400D2DA26 /* HHSRTests */,
 				43BCBFF72A25FE4400D2DA26 /* HHSRUITests */,
